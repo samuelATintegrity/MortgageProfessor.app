@@ -1,0 +1,183 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Loader2 } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { createClient } from "@/lib/supabase/client";
+
+const signupSchema = z.object({
+  full_name: z.string().min(1, "Full name is required"),
+  email: z.string().email("Please enter a valid email address"),
+  company_name: z.string().optional(),
+  nmls_number: z.string().optional(),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+type SignupValues = z.infer<typeof signupSchema>;
+
+export default function SignupPage() {
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<SignupValues>({
+    resolver: zodResolver(signupSchema),
+  });
+
+  async function onSubmit(data: SignupValues) {
+    setError(null);
+    setSuccess(false);
+    const supabase = createClient();
+
+    const { error: authError } = await supabase.auth.signUp({
+      email: data.email,
+      password: data.password,
+      options: {
+        data: {
+          full_name: data.full_name,
+          company_name: data.company_name ?? "",
+          nmls_number: data.nmls_number ?? "",
+        },
+      },
+    });
+
+    if (authError) {
+      setError(authError.message);
+      return;
+    }
+
+    setSuccess(true);
+  }
+
+  return (
+    <Card className="w-full max-w-sm">
+      <CardHeader className="text-center">
+        <CardTitle className="text-2xl">Create your account</CardTitle>
+        <CardDescription>
+          Start building professional quotes today
+        </CardDescription>
+      </CardHeader>
+
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <CardContent className="space-y-4">
+          {error && (
+            <p className="text-sm text-destructive">{error}</p>
+          )}
+
+          {success && (
+            <p className="text-sm text-green-600">
+              Check your email to confirm your account.
+            </p>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="full_name">Full Name</Label>
+            <Input
+              id="full_name"
+              placeholder="Jane Doe"
+              {...register("full_name")}
+            />
+            {errors.full_name && (
+              <p className="text-xs text-destructive">
+                {errors.full_name.message}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="you@example.com"
+              {...register("email")}
+            />
+            {errors.email && (
+              <p className="text-xs text-destructive">
+                {errors.email.message}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="company_name">
+              Company Name{" "}
+              <span className="text-muted-foreground font-normal">
+                (optional)
+              </span>
+            </Label>
+            <Input
+              id="company_name"
+              placeholder="Acme Lending"
+              {...register("company_name")}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="nmls_number">
+              NMLS Number{" "}
+              <span className="text-muted-foreground font-normal">
+                (optional)
+              </span>
+            </Label>
+            <Input
+              id="nmls_number"
+              placeholder="123456"
+              {...register("nmls_number")}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="••••••••"
+              {...register("password")}
+            />
+            {errors.password && (
+              <p className="text-xs text-destructive">
+                {errors.password.message}
+              </p>
+            )}
+          </div>
+        </CardContent>
+
+        <CardFooter className="flex flex-col gap-4">
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isSubmitting || success}
+          >
+            {isSubmitting && <Loader2 className="animate-spin" />}
+            Create Account
+          </Button>
+          <p className="text-sm text-muted-foreground">
+            Already have an account?{" "}
+            <Link href="/login" className="text-primary hover:underline">
+              Log in
+            </Link>
+          </p>
+        </CardFooter>
+      </form>
+    </Card>
+  );
+}
