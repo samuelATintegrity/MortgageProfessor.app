@@ -5,15 +5,15 @@ import { toPng } from "html-to-image";
 import { Camera, FileDown, Save, Copy, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { useQuoteStore } from "@/stores/quote-store";
+import { useItemizedStore } from "@/stores/itemized-store";
 import { saveQuote, saveTemplate } from "@/lib/actions/quotes";
 
-interface QuoteActionBarProps {
+interface ItemizedActionBarProps {
   captureRef: RefObject<HTMLDivElement | null>;
 }
 
-export function QuoteActionBar({ captureRef }: QuoteActionBarProps) {
-  const { input, result } = useQuoteStore();
+export function ItemizedActionBar({ captureRef }: ItemizedActionBarProps) {
+  const { input, result } = useItemizedStore();
   const [saving, setSaving] = useState(false);
   const [savingTemplate, setSavingTemplate] = useState(false);
 
@@ -25,10 +25,10 @@ export function QuoteActionBar({ captureRef }: QuoteActionBarProps) {
         pixelRatio: 2,
       });
       const link = document.createElement("a");
-      link.download = `mortgage-quote-${Date.now()}.png`;
+      link.download = `itemized-quote-${Date.now()}.png`;
       link.href = dataUrl;
       link.click();
-      toast({ title: "Image captured", description: "Quote saved as PNG" });
+      toast({ title: "Image captured", description: "Itemized quote saved as PNG" });
     } catch {
       toast({
         title: "Capture failed",
@@ -47,7 +47,7 @@ export function QuoteActionBar({ captureRef }: QuoteActionBarProps) {
     setSaving(true);
     try {
       const res = await saveQuote({
-        quoteType: "quick",
+        quoteType: "itemized",
         transactionType: "purchase",
         loanType: input.loanType ?? "conventional",
         ficoScore: input.fico ?? 740,
@@ -65,12 +65,12 @@ export function QuoteActionBar({ captureRef }: QuoteActionBarProps) {
         sellerCredit: input.sellerCredit ?? 0,
         buydownAmount: input.buydownAmount ?? 0,
         vaFundingFee: input.vaFundingFee ?? 0,
-        results: result as unknown as Record<string, unknown>,
+        results: { input: input as Record<string, unknown>, result: result as unknown as Record<string, unknown> },
       });
       if (res.error) {
         toast({ title: "Error", description: res.error, variant: "destructive" });
       } else {
-        toast({ title: "Saved", description: "Quote saved successfully" });
+        toast({ title: "Saved", description: "Itemized quote saved successfully" });
       }
     } finally {
       setSaving(false);
@@ -81,8 +81,8 @@ export function QuoteActionBar({ captureRef }: QuoteActionBarProps) {
     setSavingTemplate(true);
     try {
       const res = await saveTemplate({
-        name: `Quick Quote - ${new Date().toLocaleDateString()}`,
-        templateType: "quick_quote",
+        name: `Itemized Quote - ${new Date().toLocaleDateString()}`,
+        templateType: "itemized_quote",
         config: input as Record<string, unknown>,
       });
       if (res.error) {

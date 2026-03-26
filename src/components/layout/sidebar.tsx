@@ -37,6 +37,7 @@ const mainNavItems = [
   { label: "Refinance Analysis", href: "/refinance/new", icon: TrendingDown },
   { label: "Saved Analyses", href: "/refinance", icon: FolderOpen },
   { label: "Itemized Quote", href: "/itemized/new", icon: ClipboardList },
+  { label: "Saved Itemized", href: "/itemized", icon: FolderOpen },
 ];
 
 const settingsNavItems = [
