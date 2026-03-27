@@ -111,11 +111,11 @@ export default function LoanCostsPage() {
             underwriting_fee:
               data.underwriting_fee ?? DEFAULTS.underwriting_fee,
             voe_credit_fee: data.voe_credit_fee ?? DEFAULTS.voe_credit_fee,
-            tax_service_fee: data.tax_service_fee ?? DEFAULTS.tax_service_fee,
+            tax_service_fee: data.tax_fee ?? DEFAULTS.tax_service_fee,
             mers_fee: data.mers_fee ?? DEFAULTS.mers_fee,
             borrower_paid_comp_pct:
-              data.borrower_paid_comp_pct != null
-                ? data.borrower_paid_comp_pct * 100
+              data.borrower_paid_comp != null
+                ? data.borrower_paid_comp * 100
                 : DEFAULTS.borrower_paid_comp_pct,
           });
         }
@@ -145,9 +145,9 @@ export default function LoanCostsPage() {
         processing_fee: values.processing_fee,
         underwriting_fee: values.underwriting_fee,
         voe_credit_fee: values.voe_credit_fee,
-        tax_service_fee: values.tax_service_fee,
+        tax_fee: values.tax_service_fee,
         mers_fee: values.mers_fee,
-        borrower_paid_comp_pct: values.borrower_paid_comp_pct / 100,
+        borrower_paid_comp: values.borrower_paid_comp_pct / 100,
       });
 
       if (error) throw error;

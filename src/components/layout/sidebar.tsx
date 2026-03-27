@@ -10,6 +10,7 @@ import {
   TrendingDown,
   FolderOpen,
   ClipboardList,
+  ArrowLeftRight,
   User,
   DollarSign,
   Percent,
@@ -38,6 +39,7 @@ const mainNavItems = [
   { label: "Saved Analyses", href: "/refinance", icon: FolderOpen },
   { label: "Itemized Quote", href: "/itemized/new", icon: ClipboardList },
   { label: "Saved Itemized", href: "/itemized", icon: FolderOpen },
+  { label: "Compare Quotes", href: "/comparison/new", icon: ArrowLeftRight },
 ];
 
 const settingsNavItems = [

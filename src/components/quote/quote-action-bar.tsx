@@ -48,7 +48,7 @@ export function QuoteActionBar({ captureRef }: QuoteActionBarProps) {
     try {
       const res = await saveQuote({
         quoteType: "quick",
-        transactionType: "purchase",
+        transactionType: input.transactionType ?? "purchase",
         loanType: input.loanType ?? "conventional",
         ficoScore: input.fico ?? 740,
         borrowerOrLenderPaid: input.isBorrowerPaid ? "borrower" : "lender",
@@ -63,7 +63,7 @@ export function QuoteActionBar({ captureRef }: QuoteActionBarProps) {
         propertyTaxMonthly: input.propertyTaxMonthly ?? 0,
         prepaidInterestDays: input.prepaidInterestDays ?? 15,
         sellerCredit: input.sellerCredit ?? 0,
-        buydownAmount: input.buydownAmount ?? 0,
+        buydownAmount: 0,
         vaFundingFee: input.vaFundingFee ?? 0,
         results: result as unknown as Record<string, unknown>,
       });

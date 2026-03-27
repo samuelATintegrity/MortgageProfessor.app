@@ -4,12 +4,17 @@ import { calculateQuote, type QuoteInput, type QuoteResult } from "@/lib/calcula
 interface QuoteState {
   input: Partial<QuoteInput>;
   result: QuoteResult | null;
+  brandingImageUrl: string | null;
+  headlineFont: string;
   setInput: (partial: Partial<QuoteInput>) => void;
+  setBrandingImageUrl: (url: string | null) => void;
+  setHeadlineFont: (font: string) => void;
   calculate: () => void;
   reset: () => void;
 }
 
 const defaultInput: Partial<QuoteInput> = {
+  transactionType: "purchase",
   loanAmount: 300000,
   propertyValue: 400000,
   loanTermYears: 30,
@@ -24,7 +29,6 @@ const defaultInput: Partial<QuoteInput> = {
   propertyTaxMonthly: 217,
   prepaidInterestDays: 15,
   sellerCredit: 0,
-  buydownAmount: 0,
   vaFundingFee: 0,
   appraisalFee: 620,
   processingFee: 700,
@@ -34,19 +38,48 @@ const defaultInput: Partial<QuoteInput> = {
   mersFee: 30,
   titleFee: 575,
   escrowFee: 850,
-  lowRate: { rate: 0.0625, costCredit: -0.437 },
-  parRate: { rate: 0.065, costCredit: 0.65 },
-  lowCostRate: { rate: 0.06625, costCredit: 1.286 },
+  buydownType: "none",
+  piOnlyMode: false,
+  tiers: [
+    {
+      id: "tier1",
+      name: "Low Rate",
+      rate: 0.0625,
+      costCredit: -0.437,
+      color: "#1e40af",
+      visible: true,
+    },
+    {
+      id: "tier2",
+      name: "Par Rate",
+      rate: 0.065,
+      costCredit: 0.65,
+      color: "#166534",
+      visible: true,
+    },
+    {
+      id: "tier3",
+      name: "Low Cost",
+      rate: 0.06625,
+      costCredit: 1.286,
+      color: "#b45309",
+      visible: true,
+    },
+  ],
 };
 
 export const useQuoteStore = create<QuoteState>((set, get) => ({
   input: { ...defaultInput },
   result: null,
+  brandingImageUrl: null,
+  headlineFont: "Inter",
   setInput: (partial) => {
     set((state) => ({ input: { ...state.input, ...partial } }));
     // Auto-calculate
     get().calculate();
   },
+  setBrandingImageUrl: (url) => set({ brandingImageUrl: url }),
+  setHeadlineFont: (font) => set({ headlineFont: font }),
   calculate: () => {
     const { input } = get();
     try {

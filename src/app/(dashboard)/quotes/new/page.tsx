@@ -9,11 +9,24 @@ import { useQuoteStore } from "@/stores/quote-store";
 export default function NewQuotePage() {
   const captureRef = useRef<HTMLDivElement>(null);
   const calculate = useQuoteStore((s) => s.calculate);
+  const headlineFont = useQuoteStore((s) => s.headlineFont);
 
   // Run initial calculation on mount so the table populates with defaults
   useEffect(() => {
     calculate();
   }, [calculate]);
+
+  // Load Google Font dynamically when headlineFont changes
+  useEffect(() => {
+    if (headlineFont === "Inter") return; // Inter is already loaded
+    const id = `google-font-${headlineFont.replace(/\s/g, "-")}`;
+    if (document.getElementById(id)) return;
+    const link = document.createElement("link");
+    link.id = id;
+    link.rel = "stylesheet";
+    link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(headlineFont)}:wght@400;600;700&display=swap`;
+    document.head.appendChild(link);
+  }, [headlineFont]);
 
   return (
     <div className="space-y-6">
@@ -27,8 +40,8 @@ export default function NewQuotePage() {
 
       {/* Two-panel layout */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-        {/* Left: Input Form (scrollable on desktop) */}
-        <div className="xl:max-h-[calc(100vh-10rem)] xl:overflow-y-auto xl:pr-2">
+        {/* Left: Input Form */}
+        <div>
           <QuoteInputForm />
         </div>
 

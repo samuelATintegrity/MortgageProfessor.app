@@ -5,6 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectOption } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { ColorPicker } from "@/components/ui/color-picker";
+import { Eye, EyeOff } from "lucide-react";
+import type { TierConfig, BuydownType } from "@/lib/calculations/quote";
 
 function CurrencyInput({
   label,
@@ -83,9 +87,19 @@ function NumberInput({
 export function QuoteInputForm() {
   const { input, setInput } = useQuoteStore();
 
-  const transactionType = (input as Record<string, unknown>).transactionType as string | undefined ?? "purchase";
+  const transactionType = input.transactionType ?? "purchase";
   const isRefinance = transactionType === "refinance";
   const isVA = input.loanType === "va";
+  const tiers = input.tiers ?? [];
+  const piOnlyMode = input.piOnlyMode ?? false;
+  const buydownType = input.buydownType ?? "none";
+
+  function updateTier(index: number, updates: Partial<TierConfig>) {
+    const newTiers = tiers.map((t, i) =>
+      i === index ? { ...t, ...updates } : t
+    );
+    setInput({ tiers: newTiers });
+  }
 
   return (
     <div className="space-y-4">
@@ -101,7 +115,7 @@ export function QuoteInputForm() {
               id="transactionType"
               value={transactionType}
               onChange={(e) =>
-                setInput({ transactionType: e.target.value } as Record<string, unknown> as never)
+                setInput({ transactionType: e.target.value as "purchase" | "refinance" })
               }
             >
               <SelectOption value="purchase">Purchase</SelectOption>
@@ -244,9 +258,19 @@ export function QuoteInputForm() {
       {/* Section 3: Escrow & Insurance */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Escrow &amp; Insurance</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">Escrow &amp; Insurance</CardTitle>
+            <Button
+              type="button"
+              variant={piOnlyMode ? "default" : "outline"}
+              size="sm"
+              onClick={() => setInput({ piOnlyMode: !piOnlyMode })}
+            >
+              {piOnlyMode ? "Quoting P&I Only" : "Quote Principal & Interest Only"}
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <CardContent className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${piOnlyMode ? "opacity-50" : ""}`}>
           <CurrencyInput
             label="Hazard Insurance (monthly)"
             id="hazardInsuranceMonthly"
@@ -285,19 +309,14 @@ export function QuoteInputForm() {
             max={31}
           />
 
-          <CurrencyInput
-            label="Seller / Realtor Credit"
-            id="sellerCredit"
-            value={input.sellerCredit}
-            onChange={(val) => setInput({ sellerCredit: val })}
-          />
-
-          <CurrencyInput
-            label="Buydown Amount"
-            id="buydownAmount"
-            value={input.buydownAmount}
-            onChange={(val) => setInput({ buydownAmount: val })}
-          />
+          {!isRefinance && (
+            <CurrencyInput
+              label="Seller / Realtor Credit"
+              id="sellerCredit"
+              value={input.sellerCredit}
+              onChange={(val) => setInput({ sellerCredit: val })}
+            />
+          )}
 
           {isVA && (
             <CurrencyInput
@@ -325,134 +344,107 @@ export function QuoteInputForm() {
         </CardContent>
       </Card>
 
-      {/* Section 5: Rate Tiers */}
+      {/* Section 5: Temporary Buydown (hidden for refinance) */}
+      {!isRefinance && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Temporary Buydown</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-1">
+              <Label htmlFor="buydownType">Buydown Type</Label>
+              <Select
+                id="buydownType"
+                value={buydownType}
+                onChange={(e) =>
+                  setInput({ buydownType: e.target.value as BuydownType })
+                }
+              >
+                <SelectOption value="none">None</SelectOption>
+                <SelectOption value="3-2-1">3-2-1 Buydown</SelectOption>
+                <SelectOption value="2-1">2-1 Buydown</SelectOption>
+                <SelectOption value="1-1">1-1 Buydown</SelectOption>
+                <SelectOption value="1-0">1-0 Buydown</SelectOption>
+              </Select>
+            </div>
+            {buydownType !== "none" && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Buydown cost is auto-calculated per column based on each rate.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Section 6: Rate Tiers */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Rate Tiers</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Low Rate */}
-          <div>
-            <p className="text-sm font-medium mb-2">Low Rate</p>
-            <div className="grid grid-cols-2 gap-3">
-              <NumberInput
-                label="Rate %"
-                id="lowRate-rate"
-                value={
-                  input.lowRate
-                    ? parseFloat((input.lowRate.rate * 100).toFixed(4))
-                    : undefined
-                }
-                onChange={(val) =>
-                  setInput({
-                    lowRate: {
-                      rate: val / 100,
-                      costCredit: input.lowRate?.costCredit ?? 0,
-                    },
-                  })
-                }
-                step={0.001}
-                suffix="%"
-              />
-              <NumberInput
-                label="Cost / Credit %"
-                id="lowRate-costCredit"
-                value={input.lowRate?.costCredit}
-                onChange={(val) =>
-                  setInput({
-                    lowRate: {
-                      rate: input.lowRate?.rate ?? 0,
-                      costCredit: val,
-                    },
-                  })
-                }
-                step={0.001}
-                suffix="%"
-              />
-            </div>
-          </div>
+          {tiers.map((tier, index) => (
+            <div
+              key={tier.id}
+              className="rounded-lg p-3 space-y-3 border"
+              style={{ backgroundColor: `${tier.color}15` }}
+            >
+              {/* Tier header: name, color, visibility */}
+              <div className="flex items-center gap-3">
+                <ColorPicker
+                  value={tier.color}
+                  onChange={(color) => updateTier(index, { color })}
+                />
+                <Input
+                  value={tier.name}
+                  onChange={(e) => updateTier(index, { name: e.target.value })}
+                  className="h-8 text-sm font-medium flex-1 bg-white/80"
+                  placeholder="Tier name"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0"
+                  onClick={() => updateTier(index, { visible: !tier.visible })}
+                  title={tier.visible ? "Hide column" : "Show column"}
+                >
+                  {tier.visible ? (
+                    <Eye className="h-4 w-4" />
+                  ) : (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
 
-          {/* Par Rate */}
-          <div>
-            <p className="text-sm font-medium mb-2">Par Rate</p>
-            <div className="grid grid-cols-2 gap-3">
-              <NumberInput
-                label="Rate %"
-                id="parRate-rate"
-                value={
-                  input.parRate
-                    ? parseFloat((input.parRate.rate * 100).toFixed(4))
-                    : undefined
-                }
-                onChange={(val) =>
-                  setInput({
-                    parRate: {
-                      rate: val / 100,
-                      costCredit: input.parRate?.costCredit ?? 0,
-                    },
-                  })
-                }
-                step={0.001}
-                suffix="%"
-              />
-              <NumberInput
-                label="Cost / Credit %"
-                id="parRate-costCredit"
-                value={input.parRate?.costCredit}
-                onChange={(val) =>
-                  setInput({
-                    parRate: {
-                      rate: input.parRate?.rate ?? 0,
-                      costCredit: val,
-                    },
-                  })
-                }
-                step={0.001}
-                suffix="%"
-              />
+              {/* Rate and Cost/Credit inputs */}
+              <div className="grid grid-cols-2 gap-3">
+                <NumberInput
+                  label="Rate %"
+                  id={`tier-${tier.id}-rate`}
+                  value={
+                    tier.rate
+                      ? parseFloat((tier.rate * 100).toFixed(4))
+                      : undefined
+                  }
+                  onChange={(val) =>
+                    updateTier(index, { rate: val / 100 })
+                  }
+                  step={0.001}
+                  suffix="%"
+                />
+                <NumberInput
+                  label="Cost / Credit %"
+                  id={`tier-${tier.id}-costCredit`}
+                  value={tier.costCredit}
+                  onChange={(val) =>
+                    updateTier(index, { costCredit: val })
+                  }
+                  step={0.001}
+                  suffix="%"
+                />
+              </div>
             </div>
-          </div>
-
-          {/* Low Cost Rate */}
-          <div>
-            <p className="text-sm font-medium mb-2">Low Cost</p>
-            <div className="grid grid-cols-2 gap-3">
-              <NumberInput
-                label="Rate %"
-                id="lowCostRate-rate"
-                value={
-                  input.lowCostRate
-                    ? parseFloat((input.lowCostRate.rate * 100).toFixed(4))
-                    : undefined
-                }
-                onChange={(val) =>
-                  setInput({
-                    lowCostRate: {
-                      rate: val / 100,
-                      costCredit: input.lowCostRate?.costCredit ?? 0,
-                    },
-                  })
-                }
-                step={0.001}
-                suffix="%"
-              />
-              <NumberInput
-                label="Cost / Credit %"
-                id="lowCostRate-costCredit"
-                value={input.lowCostRate?.costCredit}
-                onChange={(val) =>
-                  setInput({
-                    lowCostRate: {
-                      rate: input.lowCostRate?.rate ?? 0,
-                      costCredit: val,
-                    },
-                  })
-                }
-                step={0.001}
-                suffix="%"
-              />
-            </div>
-          </div>
+          ))}
 
           <p className="text-xs text-muted-foreground">
             Negative cost = borrower pays points, Positive = lender credit

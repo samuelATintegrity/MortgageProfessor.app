@@ -1,79 +1,70 @@
 import Decimal from "decimal.js";
 import { monthlyPayment } from "./mortgage";
 
+export type BuydownType = "none" | "3-2-1" | "2-1" | "1-1" | "1-0";
+
+export interface BuydownYearResult {
+  year: number;
+  rateReduction: number;
+  rate: number;
+  monthlyPI: number;
+  monthlyTotal: number; // PI or PITI depending on mode — set by caller
+}
+
 export interface BuydownResult {
-  type: "2-1" | "3-2-1";
-  year1Rate: number;
-  year1Payment: number;
-  year2Rate: number;
-  year2Payment: number;
-  year3Rate?: number;
-  year3Payment?: number;
+  type: BuydownType;
+  years: BuydownYearResult[];
   fullRate: number;
   fullPayment: number;
   buydownCost: number;
 }
 
+/** Rate reductions per year for each buydown type */
+const BUYDOWN_REDUCTIONS: Record<Exclude<BuydownType, "none">, number[]> = {
+  "3-2-1": [3, 2, 1],
+  "2-1": [2, 1],
+  "1-1": [1, 1],
+  "1-0": [1],
+};
+
 /**
  * Calculate temporary buydown costs and payments.
+ * Each year in the buydown period has a reduced rate.
+ * Buydown cost = sum of monthly P&I savings across all reduced years.
  */
 export function calculateBuydown(
   loanAmount: number,
   fullRate: number,
   termYears: number,
-  type: "2-1" | "3-2-1"
+  type: Exclude<BuydownType, "none">
 ): BuydownResult {
   const fullPayment = monthlyPayment(loanAmount, fullRate, termYears);
+  const reductions = BUYDOWN_REDUCTIONS[type];
 
-  if (type === "2-1") {
-    const year1Rate = new Decimal(fullRate).minus(0.02).toNumber();
-    const year2Rate = new Decimal(fullRate).minus(0.01).toNumber();
-    const year1Payment = monthlyPayment(loanAmount, Math.max(0, year1Rate), termYears);
-    const year2Payment = monthlyPayment(loanAmount, Math.max(0, year2Rate), termYears);
+  let totalCost = new Decimal(0);
+  const years: BuydownYearResult[] = [];
 
-    const year1Savings = new Decimal(fullPayment).minus(year1Payment).mul(12);
-    const year2Savings = new Decimal(fullPayment).minus(year2Payment).mul(12);
-    const cost = year1Savings.plus(year2Savings).toDecimalPlaces(2).toNumber();
+  for (let i = 0; i < reductions.length; i++) {
+    const reduction = reductions[i];
+    const rate = Math.max(0, new Decimal(fullRate).minus(reduction / 100).toNumber());
+    const pi = monthlyPayment(loanAmount, rate, termYears);
+    const yearlySavings = new Decimal(fullPayment).minus(pi).mul(12);
+    totalCost = totalCost.plus(yearlySavings);
 
-    return {
-      type: "2-1",
-      year1Rate: Math.max(0, year1Rate),
-      year1Payment,
-      year2Rate: Math.max(0, year2Rate),
-      year2Payment,
-      fullRate,
-      fullPayment,
-      buydownCost: cost,
-    };
+    years.push({
+      year: i + 1,
+      rateReduction: reduction,
+      rate,
+      monthlyPI: pi,
+      monthlyTotal: pi, // default to PI, caller overrides with PITI if needed
+    });
   }
 
-  // 3-2-1
-  const year1Rate = new Decimal(fullRate).minus(0.03).toNumber();
-  const year2Rate = new Decimal(fullRate).minus(0.02).toNumber();
-  const year3Rate = new Decimal(fullRate).minus(0.01).toNumber();
-  const year1Payment = monthlyPayment(loanAmount, Math.max(0, year1Rate), termYears);
-  const year2Payment = monthlyPayment(loanAmount, Math.max(0, year2Rate), termYears);
-  const year3Payment = monthlyPayment(loanAmount, Math.max(0, year3Rate), termYears);
-
-  const year1Savings = new Decimal(fullPayment).minus(year1Payment).mul(12);
-  const year2Savings = new Decimal(fullPayment).minus(year2Payment).mul(12);
-  const year3Savings = new Decimal(fullPayment).minus(year3Payment).mul(12);
-  const cost = year1Savings
-    .plus(year2Savings)
-    .plus(year3Savings)
-    .toDecimalPlaces(2)
-    .toNumber();
-
   return {
-    type: "3-2-1",
-    year1Rate: Math.max(0, year1Rate),
-    year1Payment,
-    year2Rate: Math.max(0, year2Rate),
-    year2Payment,
-    year3Rate: Math.max(0, year3Rate),
-    year3Payment,
+    type,
+    years,
     fullRate,
     fullPayment,
-    buydownCost: cost,
+    buydownCost: totalCost.toDecimalPlaces(2).toNumber(),
   };
 }

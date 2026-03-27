@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, User, Lock, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, User, Lock, Palette, CheckCircle2, AlertCircle } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,9 @@ import {
   TabsTrigger,
   TabsContent,
 } from "@/components/ui/tabs";
+import { BrandingUploader } from "@/components/quote/branding-uploader";
+import { Select, SelectOption } from "@/components/ui/select";
+import { useQuoteStore } from "@/stores/quote-store";
 
 // ── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -52,8 +55,19 @@ type PasswordValues = z.infer<typeof passwordSchema>;
 
 // ── Component ────────────────────────────────────────────────────────────────
 
+const FONT_OPTIONS = [
+  "Inter",
+  "Poppins",
+  "Playfair Display",
+  "Merriweather",
+  "Oswald",
+  "Lora",
+  "Roboto Slab",
+];
+
 export default function SettingsPage() {
   const supabase = createClient();
+  const { brandingImageUrl, setBrandingImageUrl, headlineFont, setHeadlineFont } = useQuoteStore();
 
   const [loading, setLoading] = useState(true);
   const [profileMsg, setProfileMsg] = useState<{
@@ -108,6 +122,11 @@ export default function SettingsPage() {
           nmls_number: profile?.nmls_number ?? "",
           phone: profile?.phone ?? "",
         });
+
+        // Load branding image
+        if (profile?.logo_url) {
+          setBrandingImageUrl(profile.logo_url);
+        }
       } catch {
         setProfileMsg({ type: "error", text: "Failed to load profile." });
       } finally {
@@ -220,6 +239,10 @@ export default function SettingsPage() {
           <TabsTrigger value="security">
             <Lock className="mr-1.5 h-4 w-4" />
             Security
+          </TabsTrigger>
+          <TabsTrigger value="branding">
+            <Palette className="mr-1.5 h-4 w-4" />
+            Branding
           </TabsTrigger>
         </TabsList>
 
@@ -364,6 +387,56 @@ export default function SettingsPage() {
                 </Button>
               </CardFooter>
             </form>
+          </Card>
+        </TabsContent>
+        {/* ── Branding Tab ───────────────────────────────────────────────── */}
+        <TabsContent value="branding">
+          <Card>
+            <CardHeader>
+              <CardTitle>Quote Branding</CardTitle>
+              <CardDescription>
+                Customize how your quotes look when shared with clients
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label>Branding Image</Label>
+                <p className="text-xs text-muted-foreground">
+                  Upload your logo or branding image. It will appear at the top of every quote.
+                  Any image dimension works — it will be scaled to fit.
+                </p>
+                <BrandingUploader
+                  currentUrl={brandingImageUrl}
+                  onUpload={setBrandingImageUrl}
+                />
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2">
+                <Label htmlFor="headlineFont">Headline Font</Label>
+                <p className="text-xs text-muted-foreground">
+                  Choose a font for quote headlines and titles.
+                </p>
+                <Select
+                  id="headlineFont"
+                  value={headlineFont}
+                  onChange={(e) => setHeadlineFont(e.target.value)}
+                >
+                  {FONT_OPTIONS.map((font) => (
+                    <SelectOption key={font} value={font}>
+                      {font}
+                    </SelectOption>
+                  ))}
+                </Select>
+                <p
+                  className="text-sm mt-2 p-3 rounded-md border bg-white"
+                  style={{ fontFamily: headlineFont }}
+                >
+                  Preview: Conventional 30 Year Fixed Loan Options For You
+                </p>
+              </div>
+            </CardContent>
           </Card>
         </TabsContent>
       </Tabs>

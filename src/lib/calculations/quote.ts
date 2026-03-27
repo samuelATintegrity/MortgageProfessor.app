@@ -1,13 +1,21 @@
 import Decimal from "decimal.js";
 import { monthlyPayment } from "./mortgage";
 import { calculatePoints, prepaidInterest } from "./fees";
+import { calculateBuydown, type BuydownType, type BuydownYearResult } from "./buydown";
 
-export interface RateTier {
-  rate: number; // annual rate as decimal, e.g. 0.0625
+export type { BuydownType } from "./buydown";
+
+export interface TierConfig {
+  id: string;
+  name: string;
+  rate: number;       // annual rate as decimal, e.g. 0.0625
   costCredit: number; // cost/credit percentage, e.g. -0.437 or 1.286
+  color: string;      // hex color, e.g. "#1e40af"
+  visible: boolean;
 }
 
 export interface QuoteInput {
+  transactionType: "purchase" | "refinance";
   loanAmount: number;
   propertyValue: number;
   loanTermYears: number;
@@ -26,7 +34,6 @@ export interface QuoteInput {
   // Fees
   prepaidInterestDays: number;
   sellerCredit: number;
-  buydownAmount: number;
   vaFundingFee: number;
 
   // Loan costs
@@ -41,21 +48,27 @@ export interface QuoteInput {
   titleFee: number;
   escrowFee: number;
 
-  // Rate tiers
-  lowRate: RateTier;
-  parRate: RateTier;
-  lowCostRate: RateTier;
+  // Rate tiers (dynamic)
+  tiers: TierConfig[];
+
+  // Modes
+  buydownType: BuydownType;
+  piOnlyMode: boolean;
 }
 
 export interface TierResult {
+  id: string;
   tierName: string;
+  color: string;
+  visible: boolean;
   interestRate: number;
   monthlyPI: number;
   pointsBuydown: number; // positive = cost to borrower, negative = lender credit
   isLenderCredit: boolean;
-  prepaidThirdPartyFees: number;
+  titleFees: number;
+  prepaidCosts: number;
   lenderFees: number;
-  tempBuydown: number;
+  buydownCost: number;
   downPayment: number;
   sellerCredit: number;
   vaFundingFee: number;
@@ -63,6 +76,7 @@ export interface TierResult {
   monthlyEscrow: number;
   monthlyMI: number;
   totalMonthlyPayment: number;
+  buydownYears: BuydownYearResult[];
 }
 
 export interface QuoteResult {
@@ -70,24 +84,25 @@ export interface QuoteResult {
   propertyValue: number;
   ltv: number;
   assumptionsText: string;
-  lowRate: TierResult;
-  parRate: TierResult;
-  lowCost: TierResult;
+  tiers: TierResult[];
+  piOnlyMode: boolean;
+  buydownType: BuydownType;
+  transactionType: "purchase" | "refinance";
 }
 
 function calculateTier(
-  tierName: string,
-  tier: RateTier,
+  tierConfig: TierConfig,
   input: QuoteInput,
   downPayment: number
 ): TierResult {
   const loanAmount = input.loanAmount;
+  const isRefinance = input.transactionType === "refinance";
 
   // Monthly P&I
-  const pi = monthlyPayment(loanAmount, tier.rate, input.loanTermYears);
+  const pi = monthlyPayment(loanAmount, tierConfig.rate, input.loanTermYears);
 
   // Points: negative costCredit = cost to borrower, positive = credit
-  const pointsCredit = calculatePoints(loanAmount, tier.costCredit);
+  const pointsCredit = calculatePoints(loanAmount, tierConfig.costCredit);
   // For display: positive pointsBuydown = borrower pays, negative = lender credit
   const pointsBuydown = new Decimal(pointsCredit).neg().toNumber();
   const isLenderCredit = pointsBuydown < 0;
@@ -107,18 +122,22 @@ function calculateTier(
     lenderFees = baseLenderFees;
   }
 
-  // Prepaid interest
-  const prepaid = prepaidInterest(loanAmount, tier.rate, input.prepaidInterestDays);
+  // Title fees (separate line)
+  const titleFees = new Decimal(input.titleFee)
+    .plus(input.escrowFee)
+    .toDecimalPlaces(2)
+    .toNumber();
 
-  // Prepaid & third-party fees
-  const prepaidTaxes = new Decimal(input.propertyTaxMonthly).mul(5); // ~5 months escrow cushion
+  // Prepaid interest
+  const prepaid = prepaidInterest(loanAmount, tierConfig.rate, input.prepaidInterestDays);
+
+  // Prepaid costs (without title fees)
+  const prepaidTaxes = new Decimal(input.propertyTaxMonthly).mul(5);
   const prepaidHazard = new Decimal(input.hazardInsuranceMonthly).mul(15);
-  const prepaidThirdParty = new Decimal(prepaid)
+  const prepaidCosts = new Decimal(prepaid)
     .plus(prepaidTaxes)
     .plus(prepaidHazard)
     .plus(input.appraisalFee)
-    .plus(input.titleFee)
-    .plus(input.escrowFee)
     .toDecimalPlaces(2)
     .toNumber();
 
@@ -128,40 +147,68 @@ function calculateTier(
     .toDecimalPlaces(2)
     .toNumber();
 
+  // Buydown calculation (per-tier, since each tier has different rate)
+  let buydownCost = 0;
+  let buydownYears: BuydownYearResult[] = [];
+  if (input.buydownType !== "none" && !isRefinance) {
+    const bd = calculateBuydown(loanAmount, tierConfig.rate, input.loanTermYears, input.buydownType);
+    buydownCost = bd.buydownCost;
+    buydownYears = bd.years.map((y) => ({
+      ...y,
+      // Add escrow to monthly total if not PI-only
+      monthlyTotal: input.piOnlyMode
+        ? y.monthlyPI
+        : new Decimal(y.monthlyPI).plus(monthlyEscrow).plus(input.mortgageInsuranceMonthly).toDecimalPlaces(2).toNumber(),
+    }));
+  }
+
+  // Effective values for refinance
+  const effectiveDownPayment = isRefinance ? 0 : downPayment;
+  const effectiveSellerCredit = isRefinance ? 0 : input.sellerCredit;
+  const effectivePrepaidCosts = input.piOnlyMode ? 0 : prepaidCosts;
+
   // Total cash at closing
-  const totalCash = new Decimal(downPayment)
+  const totalCash = new Decimal(effectiveDownPayment)
     .plus(pointsBuydown)
-    .plus(prepaidThirdParty)
+    .plus(titleFees)
+    .plus(effectivePrepaidCosts)
     .plus(lenderFees)
-    .plus(input.buydownAmount)
+    .plus(buydownCost)
     .plus(input.vaFundingFee)
-    .minus(input.sellerCredit)
+    .minus(effectiveSellerCredit)
     .toDecimalPlaces(2)
     .toNumber();
 
   // Total monthly payment
+  const effectiveEscrow = input.piOnlyMode ? 0 : monthlyEscrow;
+  const effectiveMI = input.piOnlyMode ? 0 : input.mortgageInsuranceMonthly;
   const totalMonthly = new Decimal(pi)
-    .plus(monthlyEscrow)
-    .plus(input.mortgageInsuranceMonthly)
+    .plus(effectiveEscrow)
+    .plus(effectiveMI)
     .toDecimalPlaces(2)
     .toNumber();
 
   return {
-    tierName,
-    interestRate: tier.rate,
+    id: tierConfig.id,
+    tierName: tierConfig.name,
+    color: tierConfig.color,
+    visible: tierConfig.visible,
+    interestRate: tierConfig.rate,
     monthlyPI: pi,
     pointsBuydown,
     isLenderCredit,
-    prepaidThirdPartyFees: prepaidThirdParty,
+    titleFees,
+    prepaidCosts: effectivePrepaidCosts,
     lenderFees: lenderFees.toDecimalPlaces(2).toNumber(),
-    tempBuydown: input.buydownAmount,
-    downPayment,
-    sellerCredit: input.sellerCredit,
+    buydownCost,
+    downPayment: effectiveDownPayment,
+    sellerCredit: effectiveSellerCredit,
     vaFundingFee: input.vaFundingFee,
     totalCashAtClosing: totalCash,
-    monthlyEscrow,
-    monthlyMI: input.mortgageInsuranceMonthly,
+    monthlyEscrow: effectiveEscrow,
+    monthlyMI: effectiveMI,
     totalMonthlyPayment: totalMonthly,
+    buydownYears,
   };
 }
 
@@ -176,9 +223,9 @@ export function calculateQuote(input: QuoteInput): QuoteResult {
     .toDecimalPlaces(4)
     .toNumber();
 
-  const lowRate = calculateTier("Low Rate", input.lowRate, input, downPayment);
-  const parRate = calculateTier("Low Cost", input.parRate, input, downPayment);
-  const lowCost = calculateTier("Lowest Cost", input.lowCostRate, input, downPayment);
+  const tiers = input.tiers.map((tierConfig) =>
+    calculateTier(tierConfig, input, downPayment)
+  );
 
   const today = new Date().toLocaleDateString("en-US", {
     year: "numeric",
@@ -206,8 +253,9 @@ export function calculateQuote(input: QuoteInput): QuoteResult {
     propertyValue: input.propertyValue,
     ltv,
     assumptionsText,
-    lowRate,
-    parRate,
-    lowCost,
+    tiers,
+    piOnlyMode: input.piOnlyMode,
+    buydownType: input.buydownType,
+    transactionType: input.transactionType,
   };
 }
