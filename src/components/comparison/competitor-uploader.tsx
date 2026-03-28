@@ -45,6 +45,13 @@ export function CompetitorUploader() {
           body: formData,
         });
 
+        // Handle non-JSON responses gracefully
+        const contentType = res.headers.get("content-type") ?? "";
+        if (!contentType.includes("application/json")) {
+          const text = await res.text();
+          throw new Error(text || `Server error (${res.status})`);
+        }
+
         const data = await res.json();
 
         if (!res.ok) {

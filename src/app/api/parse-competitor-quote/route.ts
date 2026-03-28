@@ -149,8 +149,14 @@ export async function POST(request: Request) {
 
     return NextResponse.json(parsed);
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "An unexpected error occurred";
     console.error("Competitor quote parse error:", err);
+    // Handle Anthropic API errors specifically
+    if (err && typeof err === "object" && "status" in err) {
+      const apiErr = err as { status: number; message?: string; error?: { message?: string } };
+      const msg = apiErr.error?.message ?? apiErr.message ?? "Anthropic API error";
+      return NextResponse.json({ error: `API error (${apiErr.status}): ${msg}` }, { status: 502 });
+    }
+    const message = err instanceof Error ? err.message : "An unexpected error occurred";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
