@@ -1,6 +1,15 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { NextResponse } from "next/server";
 import type { CompetitorParseResult } from "@/lib/types/comparison";
+
+function jsonResponse(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      "Content-Encoding": "identity",
+    },
+  });
+}
 
 // Allow up to 30 seconds for AI to process document images/PDFs
 export const maxDuration = 30;
@@ -51,34 +60,25 @@ export async function POST(request: Request) {
   try {
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
-      return NextResponse.json(
-        { error: "ANTHROPIC_API_KEY is not configured" },
-        { status: 500 }
-      );
+      return jsonResponse({ error: "ANTHROPIC_API_KEY is not configured" }, 500);
     }
 
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
 
     if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+      return jsonResponse({ error: "No file provided" }, 400);
     }
 
     // Validate file type
     const mediaType = ALLOWED_TYPES[file.type];
     if (!mediaType) {
-      return NextResponse.json(
-        { error: "Unsupported file type. Please upload a PDF, PNG, or JPG file." },
-        { status: 400 }
-      );
+      return jsonResponse({ error: "Unsupported file type. Please upload a PDF, PNG, or JPG file." }, 400);
     }
 
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: "File is too large. Maximum size is 10MB." },
-        { status: 400 }
-      );
+      return jsonResponse({ error: "File is too large. Maximum size is 10MB." }, 400);
     }
 
     // Convert to base64
@@ -128,10 +128,7 @@ export async function POST(request: Request) {
     // Extract text from response
     const textBlock = response.content.find((b) => b.type === "text");
     if (!textBlock || textBlock.type !== "text") {
-      return NextResponse.json(
-        { error: "AI returned no text response" },
-        { status: 422 }
-      );
+      return jsonResponse({ error: "AI returned no text response" }, 422);
     }
 
     // Parse JSON from response (handle potential markdown fencing)
@@ -144,22 +141,18 @@ export async function POST(request: Request) {
     try {
       parsed = JSON.parse(jsonStr);
     } catch {
-      return NextResponse.json(
-        { error: "Failed to parse AI response as JSON", raw: jsonStr },
-        { status: 422 }
-      );
+      return jsonResponse({ error: "Failed to parse AI response as JSON", raw: jsonStr }, 422);
     }
 
-    return NextResponse.json(parsed);
+    return jsonResponse(parsed);
   } catch (err: unknown) {
     console.error("Competitor quote parse error:", err);
-    // Handle Anthropic API errors specifically
     if (err && typeof err === "object" && "status" in err) {
       const apiErr = err as { status: number; message?: string; error?: { message?: string } };
       const msg = apiErr.error?.message ?? apiErr.message ?? "Anthropic API error";
-      return NextResponse.json({ error: `API error (${apiErr.status}): ${msg}` }, { status: 502 });
+      return jsonResponse({ error: `API error (${apiErr.status}): ${msg}` }, 502);
     }
     const message = err instanceof Error ? err.message : "An unexpected error occurred";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return jsonResponse({ error: message }, 500);
   }
 }
