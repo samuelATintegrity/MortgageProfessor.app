@@ -199,3 +199,74 @@ export async function deleteTemplate(id: string) {
   revalidatePath("/settings/templates");
   return { success: true };
 }
+
+export async function saveComparison(data: {
+  id?: string;
+  name: string;
+  competitorLender: string;
+  competitorFileName: string | null;
+  companyName: string;
+  rows: unknown[];
+}) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { error: "Not authenticated" };
+
+  const payload = {
+    user_id: user.id,
+    name: data.name || null,
+    competitor_lender: data.competitorLender || null,
+    competitor_file_name: data.competitorFileName || null,
+    company_name: data.companyName || null,
+    rows: data.rows,
+  };
+
+  if (data.id) {
+    // Update existing
+    const { error } = await supabase
+      .from("comparisons")
+      .update(payload)
+      .eq("id", data.id)
+      .eq("user_id", user.id);
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/comparison");
+    return { success: true, id: data.id };
+  }
+
+  // Insert new
+  const { data: inserted, error } = await supabase
+    .from("comparisons")
+    .insert(payload)
+    .select("id")
+    .single();
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/comparison");
+  return { success: true, id: inserted.id };
+}
+
+export async function deleteComparison(id: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase
+    .from("comparisons")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/comparison");
+  return { success: true };
+}

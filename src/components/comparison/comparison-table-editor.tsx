@@ -5,13 +5,76 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus, X } from "lucide-react";
-import type { ComparisonCategory } from "@/lib/types/comparison";
+import type { ComparisonCategory, ComparisonRow, ValueFormat } from "@/lib/types/comparison";
 
 const fmt = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
   minimumFractionDigits: 2,
 });
+
+function formatTotal(format: ValueFormat | undefined, total: number): string {
+  if (format === "percentage" || format === "plain") return "";
+  return fmt.format(total);
+}
+
+function ValueInput({
+  row,
+  field,
+  onChange,
+}: {
+  row: ComparisonRow;
+  field: "userValue" | "competitorValue";
+  onChange: (value: number) => void;
+}) {
+  const format = row.format ?? "currency";
+  const value = row[field];
+
+  if (format === "percentage") {
+    return (
+      <div className="relative">
+        <Input
+          type="number"
+          step="0.001"
+          value={value || ""}
+          onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+          className="h-8 text-sm pr-6"
+        />
+        <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">
+          %
+        </span>
+      </div>
+    );
+  }
+
+  if (format === "plain") {
+    return (
+      <Input
+        type="number"
+        step="1"
+        value={value || ""}
+        onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+        className="h-8 text-sm"
+      />
+    );
+  }
+
+  // Default: currency
+  return (
+    <div className="relative">
+      <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">
+        $
+      </span>
+      <Input
+        type="number"
+        step="0.01"
+        value={value || ""}
+        onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+        className="h-8 text-sm pl-5"
+      />
+    </div>
+  );
+}
 
 const CATEGORY_LABELS: Record<ComparisonCategory, string> = {
   loan_info: "Loan Info",
@@ -54,8 +117,9 @@ export function ComparisonTableEditor() {
       {/* Category sections */}
       {CATEGORY_ORDER.map((category) => {
         const categoryRows = rows.filter((r) => r.category === category);
-        const userTotal = categoryRows.reduce((sum, r) => sum + r.userValue, 0);
-        const competitorTotal = categoryRows.reduce(
+        const currencyRows = categoryRows.filter((r) => (r.format ?? "currency") === "currency");
+        const userTotal = currencyRows.reduce((sum, r) => sum + r.userValue, 0);
+        const competitorTotal = currencyRows.reduce(
           (sum, r) => sum + r.competitorValue,
           0
         );
@@ -90,22 +154,11 @@ export function ComparisonTableEditor() {
                     placeholder="Label"
                     className="h-8 text-sm"
                   />
-                  <div className="relative">
-                    <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">
-                      $
-                    </span>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={row.userValue || ""}
-                      onChange={(e) =>
-                        updateRow(row.id, {
-                          userValue: parseFloat(e.target.value) || 0,
-                        })
-                      }
-                      className="h-8 text-sm pl-5"
-                    />
-                  </div>
+                  <ValueInput
+                    row={row}
+                    field="userValue"
+                    onChange={(v) => updateRow(row.id, { userValue: v })}
+                  />
                   <Input
                     value={row.competitorLabel}
                     onChange={(e) =>
@@ -114,22 +167,11 @@ export function ComparisonTableEditor() {
                     placeholder="Label"
                     className="h-8 text-sm"
                   />
-                  <div className="relative">
-                    <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">
-                      $
-                    </span>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={row.competitorValue || ""}
-                      onChange={(e) =>
-                        updateRow(row.id, {
-                          competitorValue: parseFloat(e.target.value) || 0,
-                        })
-                      }
-                      className="h-8 text-sm pl-5"
-                    />
-                  </div>
+                  <ValueInput
+                    row={row}
+                    field="competitorValue"
+                    onChange={(v) => updateRow(row.id, { competitorValue: v })}
+                  />
                   <Button
                     variant="ghost"
                     size="icon"

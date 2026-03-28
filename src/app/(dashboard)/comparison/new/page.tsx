@@ -1,15 +1,25 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { CompetitorUploader } from "@/components/comparison/competitor-uploader";
 import { ComparisonTableEditor } from "@/components/comparison/comparison-table-editor";
 import { ComparisonTableOutput } from "@/components/comparison/comparison-table-output";
 import { ComparisonActionBar } from "@/components/comparison/comparison-action-bar";
 import { useComparisonStore } from "@/stores/comparison-store";
+import { useQuoteStore } from "@/stores/quote-store";
+import { QuoteImportSelector } from "@/components/comparison/quote-import-selector";
 
 export default function ComparisonPage() {
   const captureRef = useRef<HTMLDivElement>(null);
-  const hasData = useComparisonStore((s) => s.competitorData !== null);
+  const hasData = useComparisonStore((s) => s.competitorData !== null || s.rows.length > 0);
+  const setCompanyName = useComparisonStore((s) => s.setCompanyName);
+  const profileCompanyName = useQuoteStore((s) => s.profile.companyName);
+
+  useEffect(() => {
+    if (profileCompanyName) {
+      setCompanyName(profileCompanyName);
+    }
+  }, [profileCompanyName, setCompanyName]);
 
   return (
     <div className="space-y-6">
@@ -21,8 +31,16 @@ export default function ComparisonPage() {
         </p>
       </div>
 
-      {/* Upload area */}
-      <CompetitorUploader />
+      {/* Upload + Import */}
+      <div className="flex flex-col gap-4">
+        <CompetitorUploader />
+        <div className="flex items-center gap-2">
+          <QuoteImportSelector />
+          <span className="text-xs text-muted-foreground">
+            Populate &ldquo;Your Quote&rdquo; column from a saved quote
+          </span>
+        </div>
+      </div>
 
       {/* Two-panel layout (shown after parse) */}
       {hasData && (

@@ -40,6 +40,7 @@ const mainNavItems = [
   { label: "Itemized Quote", href: "/itemized/new", icon: ClipboardList },
   { label: "Saved Itemized", href: "/itemized", icon: FolderOpen },
   { label: "Compare Quotes", href: "/comparison/new", icon: ArrowLeftRight },
+  { label: "Saved Comparisons", href: "/comparison", icon: FolderOpen },
 ];
 
 const settingsNavItems = [
@@ -70,6 +71,8 @@ export function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   function isActive(href: string): boolean {
     if (href === "/dashboard") return pathname === "/dashboard";
     if (href === "/settings") return pathname === "/settings";
+    // Exact match for list pages (e.g. /comparison, /quotes) to avoid matching /comparison/new
+    if (!href.includes("/new") && pathname.startsWith(href + "/new")) return false;
     return pathname.startsWith(href);
   }
 

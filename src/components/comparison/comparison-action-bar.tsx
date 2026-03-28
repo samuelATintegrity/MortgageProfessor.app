@@ -1,11 +1,19 @@
 "use client";
 
-import { type RefObject } from "react";
+import { type RefObject, useState } from "react";
 import { toPng } from "html-to-image";
-import { Camera, RotateCcw } from "lucide-react";
+import { Camera, RotateCcw, Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { useComparisonStore } from "@/stores/comparison-store";
+import { saveComparison } from "@/lib/actions/quotes";
 
 interface ComparisonActionBarProps {
   captureRef: RefObject<HTMLDivElement | null>;
@@ -14,6 +22,16 @@ interface ComparisonActionBarProps {
 export function ComparisonActionBar({ captureRef }: ComparisonActionBarProps) {
   const reset = useComparisonStore((s) => s.reset);
   const hasData = useComparisonStore((s) => s.rows.length > 0);
+  const savedId = useComparisonStore((s) => s.savedId);
+  const setSavedId = useComparisonStore((s) => s.setSavedId);
+  const rows = useComparisonStore((s) => s.rows);
+  const lenderName = useComparisonStore((s) => s.lenderName);
+  const companyName = useComparisonStore((s) => s.companyName);
+  const competitorFileName = useComparisonStore((s) => s.competitorFileName);
+
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [saveName, setSaveName] = useState("");
+  const [saving, setSaving] = useState(false);
 
   async function handleCapture() {
     if (!captureRef.current) return;
@@ -36,14 +54,100 @@ export function ComparisonActionBar({ captureRef }: ComparisonActionBarProps) {
     }
   }
 
+  async function handleSave() {
+    setSaving(true);
+    try {
+      const result = await saveComparison({
+        id: savedId ?? undefined,
+        name: saveName || `${companyName || "Quote"} vs ${lenderName || "Competitor"}`,
+        competitorLender: lenderName,
+        competitorFileName: competitorFileName,
+        companyName,
+        rows,
+      });
+
+      if (result.error) {
+        toast({ title: "Save failed", description: result.error, variant: "destructive" });
+      } else {
+        if (result.id) setSavedId(result.id);
+        setSaveDialogOpen(false);
+        toast({ title: savedId ? "Updated" : "Saved", description: "Comparison saved successfully." });
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleQuickUpdate() {
+    if (!savedId) return;
+    setSaving(true);
+    try {
+      const result = await saveComparison({
+        id: savedId,
+        name: saveName || `${companyName || "Quote"} vs ${lenderName || "Competitor"}`,
+        competitorLender: lenderName,
+        competitorFileName: competitorFileName,
+        companyName,
+        rows,
+      });
+
+      if (result.error) {
+        toast({ title: "Update failed", description: result.error, variant: "destructive" });
+      } else {
+        toast({ title: "Updated", description: "Comparison updated." });
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="flex flex-wrap gap-2">
       <Button onClick={handleCapture} variant="default" size="sm" disabled={!hasData}>
-        <Camera />
+        <Camera className="h-4 w-4" />
         Capture as Image
       </Button>
+
+      {savedId ? (
+        <Button onClick={handleQuickUpdate} variant="outline" size="sm" disabled={saving || !hasData}>
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          Update
+        </Button>
+      ) : (
+        <>
+          <Button variant="outline" size="sm" disabled={!hasData} onClick={() => setSaveDialogOpen(true)}>
+            <Save className="h-4 w-4" />
+            Save
+          </Button>
+          <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Save Comparison</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-sm font-medium" htmlFor="compName">
+                  Name
+                </label>
+                <Input
+                  id="compName"
+                  value={saveName}
+                  onChange={(e) => setSaveName(e.target.value)}
+                  placeholder={`${companyName || "Quote"} vs ${lenderName || "Competitor"}`}
+                />
+              </div>
+              <Button onClick={handleSave} className="w-full" disabled={saving}>
+                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                Save Comparison
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+        </>
+      )}
+
       <Button onClick={reset} variant="outline" size="sm">
-        <RotateCcw />
+        <RotateCcw className="h-4 w-4" />
         Reset
       </Button>
     </div>
