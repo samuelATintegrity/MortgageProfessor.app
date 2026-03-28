@@ -22,6 +22,7 @@ export function RefiActionBar({ captureRef }: RefiActionBarProps) {
       const dataUrl = await toPng(captureRef.current, {
         quality: 0.95,
         pixelRatio: 2,
+        backgroundColor: "#ffffff",
       });
       const link = document.createElement("a");
       link.download = `refi-analysis-${Date.now()}.png`;

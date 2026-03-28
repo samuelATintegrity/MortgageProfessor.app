@@ -4,6 +4,13 @@ import { useState, type RefObject } from "react";
 import { toPng, toCanvas } from "html-to-image";
 import { Camera, FileDown, Save, Copy, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { useQuoteStore } from "@/stores/quote-store";
 import { saveQuote, saveTemplate } from "@/lib/actions/quotes";
@@ -16,6 +23,8 @@ export function QuoteActionBar({ captureRef }: QuoteActionBarProps) {
   const { input, result } = useQuoteStore();
   const [saving, setSaving] = useState(false);
   const [savingTemplate, setSavingTemplate] = useState(false);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [saveName, setSaveName] = useState("");
 
   async function handleCapture() {
     if (!captureRef.current) return;
@@ -104,10 +113,13 @@ export function QuoteActionBar({ captureRef }: QuoteActionBarProps) {
         buydownAmount: 0,
         vaFundingFee: result?.financedFeeAmount ?? 0,
         results: result as unknown as Record<string, unknown>,
+        name: saveName || undefined,
       });
       if (res.error) {
         toast({ title: "Error", description: res.error, variant: "destructive" });
       } else {
+        setSaveDialogOpen(false);
+        setSaveName("");
         toast({ title: "Saved", description: "Quote saved successfully" });
       }
     } finally {
@@ -143,10 +155,34 @@ export function QuoteActionBar({ captureRef }: QuoteActionBarProps) {
         <FileDown />
         Export PDF
       </Button>
-      <Button onClick={handleSaveQuote} variant="outline" size="sm" disabled={saving || !result}>
-        {saving ? <Loader2 className="animate-spin" /> : <Save />}
+      <Button variant="outline" size="sm" disabled={!result} onClick={() => setSaveDialogOpen(true)}>
+        <Save />
         Save Quote
       </Button>
+      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Save Quote</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <label className="text-sm font-medium" htmlFor="quoteName">
+                Quote Name
+              </label>
+              <Input
+                id="quoteName"
+                value={saveName}
+                onChange={(e) => setSaveName(e.target.value)}
+                placeholder="e.g. Smith Family Purchase"
+              />
+            </div>
+            <Button onClick={handleSaveQuote} className="w-full" disabled={saving}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              Save Quote
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       <Button onClick={handleSaveTemplate} variant="outline" size="sm" disabled={savingTemplate}>
         {savingTemplate ? <Loader2 className="animate-spin" /> : <Copy />}
         Save as Template

@@ -2,6 +2,13 @@ import Decimal from "decimal.js";
 import { monthlyPayment } from "./mortgage";
 import { prepaidInterest, calculatePoints, calculateFinancedFeeAmount } from "./fees";
 
+export interface CustomFee {
+  id: string;
+  label: string;
+  amount: number;
+  section: "A" | "B" | "C";
+}
+
 export interface ItemizedInput {
   // Loan details
   loanAmount: number;
@@ -44,6 +51,9 @@ export interface ItemizedInput {
   endorsementsFee: number;
   pestInspectionFee: number;
   surveyFee: number;
+
+  // Custom fees (user-added)
+  customFees: CustomFee[];
 
   // Additional
   transactionType: "purchase" | "refinance";
@@ -152,6 +162,13 @@ export function calculateItemized(input: ItemizedInput): ItemizedResult {
     sectionA.push({ label: "Origination Fee", amount: compAmount });
   }
 
+  // Custom fees for Section A
+  for (const cf of (input.customFees ?? [])) {
+    if (cf.section === "A" && cf.amount !== 0) {
+      sectionA.push({ label: cf.label || "Custom Fee", amount: cf.amount });
+    }
+  }
+
   const sectionATotal = sectionA.reduce(
     (sum, item) => new Decimal(sum).plus(item.amount).toNumber(),
     0
@@ -185,6 +202,13 @@ export function calculateItemized(input: ItemizedInput): ItemizedResult {
     sectionB.push({ label: "Survey Fee", amount: input.surveyFee });
   }
 
+  // Custom fees for Section B
+  for (const cf of (input.customFees ?? [])) {
+    if (cf.section === "B" && cf.amount !== 0) {
+      sectionB.push({ label: cf.label || "Custom Fee", amount: cf.amount });
+    }
+  }
+
   const sectionBTotal = sectionB.reduce(
     (sum, item) => new Decimal(sum).plus(item.amount).toNumber(),
     0
@@ -207,6 +231,13 @@ export function calculateItemized(input: ItemizedInput): ItemizedResult {
   }
   if (input.endorsementsFee > 0) {
     sectionC.push({ label: "Endorsements", amount: input.endorsementsFee });
+  }
+
+  // Custom fees for Section C
+  for (const cf of (input.customFees ?? [])) {
+    if (cf.section === "C" && cf.amount !== 0) {
+      sectionC.push({ label: cf.label || "Custom Fee", amount: cf.amount });
+    }
   }
 
   const sectionCTotal = sectionC.reduce(

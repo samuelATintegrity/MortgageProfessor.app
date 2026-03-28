@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectOption } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 
 function CurrencyInput({
   label,
@@ -81,7 +82,7 @@ function formatDateForInput(date: Date | undefined): string {
 }
 
 export function RefiInputForm() {
-  const { input, setInput } = useRefiStore();
+  const { input, setInput, sectionVisibility, setSectionVisibility } = useRefiStore();
 
   return (
     <div className="space-y-4">
@@ -157,7 +158,7 @@ export function RefiInputForm() {
             />
 
             <CurrencyInput
-              label="Refinance Closing Costs"
+              label="Loan Costs"
               id="closingCosts"
               value={input.closingCosts}
               onChange={(val) => setInput({ closingCosts: val })}
@@ -171,19 +172,37 @@ export function RefiInputForm() {
             />
 
             <div className="space-y-1">
-              <Label htmlFor="newTermYears">New Loan Term</Label>
-              <Select
+              <Label htmlFor="newTermYears">New Loan Term (Years)</Label>
+              <Input
                 id="newTermYears"
-                value={String(input.newTermYears ?? 30)}
+                type="number"
+                min={1}
+                max={40}
+                step={1}
+                value={input.newTermYears ?? 30}
                 onChange={(e) =>
-                  setInput({ newTermYears: parseInt(e.target.value) })
+                  setInput({ newTermYears: parseInt(e.target.value) || 30 })
                 }
-              >
-                <SelectOption value="15">15 Years</SelectOption>
-                <SelectOption value="20">20 Years</SelectOption>
-                <SelectOption value="25">25 Years</SelectOption>
-                <SelectOption value="30">30 Years</SelectOption>
-              </Select>
+              />
+              <div className="flex flex-wrap gap-1">
+                {[30, 25, 20, 15, 10].map((term) => {
+                  const isActive = input.newTermYears === term;
+                  return (
+                    <button
+                      key={term}
+                      type="button"
+                      className={`px-2 py-0.5 text-xs rounded border transition-colors ${
+                        isActive
+                          ? "bg-blue-600 text-white border-blue-600"
+                          : "bg-white text-gray-600 border-gray-300 hover:bg-gray-100"
+                      }`}
+                      onClick={() => setInput({ newTermYears: term })}
+                    >
+                      {term}yr
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="space-y-1">
@@ -231,6 +250,52 @@ export function RefiInputForm() {
               />
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Additional Benefits */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Additional Benefits</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <CurrencyInput
+            label="Escrow Refund Amount"
+            id="escrowRefundAmount"
+            value={input.escrowRefundAmount}
+            onChange={(val) => setInput({ escrowRefundAmount: val })}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Report Sections */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Report Sections</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {([
+            { key: "monthlyPayment" as const, label: "Monthly Payment Comparison" },
+            { key: "interestSavings" as const, label: "Interest Savings" },
+            { key: "breakEven" as const, label: "Break-Even Analysis" },
+            { key: "acceleratedPayoff" as const, label: "Accelerated Payoff" },
+            { key: "additionalBenefits" as const, label: "Additional Benefits" },
+            { key: "showSkippedPayments" as const, label: "Show Skipped Payments" },
+            { key: "summary" as const, label: "Summary" },
+          ]).map(({ key, label }) => (
+            <div key={key} className="flex items-center justify-between">
+              <Label htmlFor={`toggle-${key}`} className="text-sm cursor-pointer">
+                {label}
+              </Label>
+              <Switch
+                id={`toggle-${key}`}
+                checked={sectionVisibility[key]}
+                onCheckedChange={(checked) =>
+                  setSectionVisibility({ [key]: checked })
+                }
+              />
+            </div>
+          ))}
         </CardContent>
       </Card>
     </div>

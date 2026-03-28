@@ -122,6 +122,63 @@ const fmtCurrency = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
+function QuoteSection({
+  label,
+  quotes,
+  selectedId,
+  onSelect,
+}: {
+  label: string;
+  quotes: SavedQuoteSummary[];
+  selectedId: string | null;
+  onSelect: (q: SavedQuoteSummary) => void;
+}) {
+  if (quotes.length === 0) return null;
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5 px-1">
+        {label}
+      </p>
+      <div className="space-y-1">
+        {quotes.map((q) => {
+          const isSelected = selectedId === q.id;
+          const isItemizedQuote = q.quote_type === "itemized";
+          const hasTiers = isItemizedQuote
+            ? !!q.results.result
+            : q.results.tiers && q.results.tiers.length > 0;
+          return (
+            <button
+              key={q.id}
+              onClick={() => onSelect(q)}
+              disabled={!hasTiers}
+              className={`w-full text-left rounded-md border p-3 transition-colors ${
+                isSelected
+                  ? "border-primary bg-primary/5"
+                  : hasTiers
+                  ? "border-gray-200 hover:border-gray-300"
+                  : "border-gray-100 opacity-50 cursor-not-allowed"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {q.name || q.client_name || "Untitled Quote"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {q.loan_type} &middot; {fmtCurrency.format(q.base_loan_amount)} &middot;{" "}
+                    {new Date(q.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                {isSelected && <Check className="h-4 w-4 text-primary shrink-0" />}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function QuoteImportSelector() {
   const [open, setOpen] = useState(false);
   const [quotes, setQuotes] = useState<SavedQuoteSummary[]>([]);
@@ -216,41 +273,19 @@ export function QuoteImportSelector() {
           </p>
         ) : (
           <div className="flex flex-col gap-3 overflow-y-auto flex-1 min-h-0">
-            {/* Quote list */}
-            <div className="space-y-1">
-              {quotes.map((q) => {
-                const isSelected = selectedQuote?.id === q.id;
-                const isItemizedQuote = q.quote_type === "itemized";
-                const hasTiers = isItemizedQuote ? !!q.results.result : (q.results.tiers && q.results.tiers.length > 0);
-                return (
-                  <button
-                    key={q.id}
-                    onClick={() => handleSelectQuote(q)}
-                    disabled={!hasTiers}
-                    className={`w-full text-left rounded-md border p-3 transition-colors ${
-                      isSelected
-                        ? "border-primary bg-primary/5"
-                        : hasTiers
-                        ? "border-gray-200 hover:border-gray-300"
-                        : "border-gray-100 opacity-50 cursor-not-allowed"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {q.name || q.client_name || "Untitled Quote"}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {q.loan_type} &middot; {fmtCurrency.format(q.base_loan_amount)} &middot;{" "}
-                          {new Date(q.created_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                      {isSelected && <Check className="h-4 w-4 text-primary shrink-0" />}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+            {/* Quote list — sectioned */}
+            <QuoteSection
+              label="Quick Quotes"
+              quotes={quotes.filter((q) => q.quote_type !== "itemized")}
+              selectedId={selectedQuote?.id ?? null}
+              onSelect={handleSelectQuote}
+            />
+            <QuoteSection
+              label="Itemized Quotes"
+              quotes={quotes.filter((q) => q.quote_type === "itemized")}
+              selectedId={selectedQuote?.id ?? null}
+              onSelect={handleSelectQuote}
+            />
 
             {/* Tier selector */}
             {selectedQuote && showTierSelector && (

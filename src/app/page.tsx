@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
-import { Zap, TrendingDown, FileText, GraduationCap } from "lucide-react";
+import { Zap, TrendingDown, FileText } from "lucide-react";
 
 export default function LandingPage() {
   return (
@@ -8,9 +8,9 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 text-xl font-bold text-primary">
-            <GraduationCap className="h-6 w-6" />
-            Mortgage Professor
+          <Link href="/">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Mortgage Professor" className="h-8 w-auto" />
           </Link>
           <Link href="/login" className={buttonVariants({ variant: "outline" })}>
             Log In

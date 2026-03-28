@@ -1,10 +1,22 @@
 import { create } from "zustand";
 import { calculateRefinance, type RefiInput, type RefiResult } from "@/lib/calculations/refinance";
 
+export interface SectionVisibility {
+  monthlyPayment: boolean;
+  interestSavings: boolean;
+  breakEven: boolean;
+  acceleratedPayoff: boolean;
+  additionalBenefits: boolean;
+  showSkippedPayments: boolean;
+  summary: boolean;
+}
+
 interface RefiState {
   input: Partial<RefiInput>;
   result: RefiResult | null;
+  sectionVisibility: SectionVisibility;
   setInput: (partial: Partial<RefiInput>) => void;
+  setSectionVisibility: (partial: Partial<SectionVisibility>) => void;
   calculate: () => void;
   reset: () => void;
 }
@@ -18,19 +30,34 @@ const defaultInput: Partial<RefiInput> = {
   cashOutAmount: 0,
   closingCosts: 5000,
   newRate: 0.05,
-  newTermYears: 15,
+  newTermYears: 30,
   newStartDate: new Date(),
   payingCostsMethod: "roll_into_loan",
   partialOutOfPocket: 0,
+  escrowRefundAmount: 0,
+  currentPaymentIncludesEscrow: true,
+};
+
+const defaultVisibility: SectionVisibility = {
+  monthlyPayment: true,
+  interestSavings: true,
+  breakEven: true,
+  acceleratedPayoff: true,
+  additionalBenefits: true,
+  showSkippedPayments: true,
+  summary: true,
 };
 
 export const useRefiStore = create<RefiState>((set, get) => ({
   input: { ...defaultInput },
   result: null,
+  sectionVisibility: { ...defaultVisibility },
   setInput: (partial) => {
     set((state) => ({ input: { ...state.input, ...partial } }));
     get().calculate();
   },
+  setSectionVisibility: (partial) =>
+    set((state) => ({ sectionVisibility: { ...state.sectionVisibility, ...partial } })),
   calculate: () => {
     const { input } = get();
     try {
@@ -40,5 +67,5 @@ export const useRefiStore = create<RefiState>((set, get) => ({
       // incomplete input
     }
   },
-  reset: () => set({ input: { ...defaultInput }, result: null }),
+  reset: () => set({ input: { ...defaultInput }, result: null, sectionVisibility: { ...defaultVisibility } }),
 }));

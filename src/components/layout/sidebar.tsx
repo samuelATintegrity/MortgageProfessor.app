@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  GraduationCap,
   LayoutDashboard,
   Zap,
   FileText,
@@ -135,9 +134,10 @@ export function Sidebar({ user }: SidebarProps) {
   return (
     <aside className="hidden lg:flex lg:flex-col w-64 border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
       {/* Logo */}
-      <div className="flex items-center gap-2 px-6 py-5">
-        <GraduationCap className="h-6 w-6 text-primary" />
-        <span className="text-lg font-bold">Mortgage Professor</span>
+      <div className="px-6 py-5">
+        <Link href="/dashboard">
+          <img src="/logo.png" alt="Mortgage Professor" className="h-8 w-auto" />
+        </Link>
       </div>
 
       {/* Navigation */}

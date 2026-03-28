@@ -153,7 +153,7 @@ export const ComparisonTableOutput = forwardRef<
   HTMLDivElement,
   ComparisonTableOutputProps
 >(function ComparisonTableOutput({ className }, ref) {
-  const { rows, lenderName, companyName } = useComparisonStore();
+  const { rows, lenderName, companyName, headerColor } = useComparisonStore();
   const yourLabel = companyName || "Your Quote";
 
   if (rows.length === 0) {
@@ -181,7 +181,7 @@ export const ComparisonTableOutput = forwardRef<
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">
           <thead>
-            <tr className="bg-gray-800 text-white">
+            <tr style={{ backgroundColor: headerColor || "#1f2937" }} className="text-white">
               <th className="text-left px-3 py-2 font-medium rounded-tl-md w-[35%]">
                 &nbsp;
               </th>

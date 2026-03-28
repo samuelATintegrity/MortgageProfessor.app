@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectOption } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Plus, X } from "lucide-react";
 import { calculateFinancedFeeAmount } from "@/lib/calculations/fees";
 
 function CurrencyInput({
@@ -116,8 +118,74 @@ function NumberInput({
   );
 }
 
+function CustomFeeRows({
+  section,
+  fees,
+  onAdd,
+  onUpdate,
+  onRemove,
+}: {
+  section: "A" | "B" | "C";
+  fees: Array<{ id: string; label: string; amount: number; section: string }>;
+  onAdd: (section: "A" | "B" | "C") => void;
+  onUpdate: (id: string, partial: { label?: string; amount?: number }) => void;
+  onRemove: (id: string) => void;
+}) {
+  const sectionFees = fees.filter((f) => f.section === section);
+  return (
+    <div className="col-span-full space-y-2 pt-2 border-t">
+      {sectionFees.map((fee) => (
+        <div key={fee.id} className="flex items-end gap-2">
+          <div className="flex-1 space-y-1">
+            <Label htmlFor={`cf-label-${fee.id}`} className="text-xs">Fee Name</Label>
+            <Input
+              id={`cf-label-${fee.id}`}
+              value={fee.label}
+              onChange={(e) => onUpdate(fee.id, { label: e.target.value })}
+              placeholder="Custom fee name"
+              className="h-8 text-sm"
+            />
+          </div>
+          <div className="w-32 space-y-1">
+            <Label htmlFor={`cf-amount-${fee.id}`} className="text-xs">Amount</Label>
+            <div className="relative">
+              <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+              <Input
+                id={`cf-amount-${fee.id}`}
+                type="number"
+                step="0.01"
+                min={0}
+                value={fee.amount || ""}
+                onChange={(e) => onUpdate(fee.id, { amount: parseFloat(e.target.value) || 0 })}
+                className="h-8 text-sm pl-5"
+              />
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            onClick={() => onRemove(fee.id)}
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        </div>
+      ))}
+      <Button
+        variant="outline"
+        size="sm"
+        className="text-xs"
+        onClick={() => onAdd(section)}
+      >
+        <Plus className="h-3 w-3 mr-1" />
+        Add Custom Fee
+      </Button>
+    </div>
+  );
+}
+
 export function ItemizedInputForm() {
-  const { input, setInput } = useItemizedStore();
+  const { input, setInput, stickyLtv, setStickyLtv, stickyMiFactor, setStickyMiFactor, addCustomFee, updateCustomFee, removeCustomFee } = useItemizedStore();
   const { sectionHeaderColor, setSectionHeaderColor } = useQuoteStore();
   const isVA = input.loanType === "va";
   const isFHA = input.loanType === "fha";
@@ -198,12 +266,50 @@ export function ItemizedInputForm() {
             onChange={(val) => setInput({ propertyValue: val })}
           />
 
-          <CurrencyInput
-            label="Loan Amount"
-            id="loanAmount"
-            value={input.loanAmount}
-            onChange={(val) => setInput({ loanAmount: val })}
-          />
+          <div className="space-y-1">
+            <CurrencyInput
+              label="Loan Amount"
+              id="loanAmount"
+              value={input.loanAmount}
+              onChange={(val) => setInput({ loanAmount: val })}
+            />
+            <div className="flex flex-wrap gap-1">
+              {[
+                { label: "97%", ltv: 0.97 },
+                { label: "96.5%", ltv: 0.965 },
+                { label: "95%", ltv: 0.95 },
+                { label: "90%", ltv: 0.90 },
+                { label: "80%", ltv: 0.80 },
+                { label: "75%", ltv: 0.75 },
+              ].map(({ label, ltv }) => {
+                const isActive = stickyLtv === ltv;
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    className={`px-2 py-0.5 text-xs rounded border transition-colors ${
+                      isActive
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white text-gray-600 border-gray-300 hover:bg-gray-100"
+                    }`}
+                    onClick={() => {
+                      if (isActive) {
+                        setStickyLtv(null);
+                      } else {
+                        setStickyLtv(ltv);
+                        const pv = input.propertyValue ?? 0;
+                        if (pv > 0) {
+                          setInput({ loanAmount: Math.round(pv * ltv), propertyValue: pv });
+                        }
+                      }
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           <div className="space-y-1">
             <Label htmlFor="loanTermYears">Loan Term</Label>
@@ -296,6 +402,13 @@ export function ItemizedInputForm() {
             value={input.adminFee}
             onChange={(val) => setInput({ adminFee: val })}
           />
+          <CustomFeeRows
+            section="A"
+            fees={input.customFees ?? []}
+            onAdd={addCustomFee}
+            onUpdate={updateCustomFee}
+            onRemove={removeCustomFee}
+          />
         </CardContent>
       </Card>
 
@@ -385,6 +498,13 @@ export function ItemizedInputForm() {
             value={input.surveyFee}
             onChange={(val) => setInput({ surveyFee: val })}
           />
+          <CustomFeeRows
+            section="B"
+            fees={input.customFees ?? []}
+            onAdd={addCustomFee}
+            onUpdate={updateCustomFee}
+            onRemove={removeCustomFee}
+          />
         </CardContent>
       </Card>
 
@@ -430,12 +550,98 @@ export function ItemizedInputForm() {
             value={input.propertyTaxMonthly}
             onChange={(val) => setInput({ propertyTaxMonthly: val })}
           />
-          <CurrencyInput
-            label="Mortgage Insurance (monthly)"
-            id="mortgageInsuranceMonthly"
-            value={input.mortgageInsuranceMonthly}
-            onChange={(val) => setInput({ mortgageInsuranceMonthly: val })}
-          />
+          <div className="space-y-1">
+            <CurrencyInput
+              label="Mortgage Insurance (monthly)"
+              id="mortgageInsuranceMonthly"
+              value={input.mortgageInsuranceMonthly}
+              onChange={(val) => setInput({ mortgageInsuranceMonthly: val })}
+            />
+            <div className="flex flex-wrap items-center gap-1">
+              {[
+                { label: ".55%", factor: 0.0055 },
+                { label: ".50%", factor: 0.005 },
+                { label: ".35%", factor: 0.0035 },
+                { label: ".25%", factor: 0.0025 },
+              ].map(({ label, factor }) => {
+                const isActive = stickyMiFactor === factor;
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    className={`px-2 py-0.5 text-xs rounded border transition-colors ${
+                      isActive
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white text-gray-600 border-gray-300 hover:bg-gray-100"
+                    }`}
+                    onClick={() => {
+                      if (isActive) {
+                        setStickyMiFactor(null);
+                      } else {
+                        setStickyMiFactor(factor);
+                        const loan = input.loanAmount ?? 0;
+                        const pv = input.propertyValue ?? 0;
+                        if (loan > 0) {
+                          setInput({
+                            mortgageInsuranceMonthly: Math.round((loan * factor) / 12 * 100) / 100,
+                            loanAmount: loan,
+                            propertyValue: pv,
+                          });
+                        }
+                      }
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+              <div className="flex items-center gap-1 ml-1">
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Factor %"
+                  className={`w-20 px-2 py-0.5 text-xs rounded border text-gray-700 ${
+                    stickyMiFactor !== null &&
+                    ![0.0055, 0.005, 0.0035, 0.0025].includes(stickyMiFactor)
+                      ? "bg-blue-50 border-blue-400"
+                      : "bg-white border-gray-300"
+                  }`}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      const val = parseFloat((e.target as HTMLInputElement).value);
+                      const loan = input.loanAmount ?? 0;
+                      const pv = input.propertyValue ?? 0;
+                      if (!isNaN(val) && loan > 0) {
+                        const factor = val / 100;
+                        setStickyMiFactor(factor);
+                        setInput({
+                          mortgageInsuranceMonthly: Math.round((loan * factor) / 12 * 100) / 100,
+                          loanAmount: loan,
+                          propertyValue: pv,
+                        });
+                      }
+                    }
+                  }}
+                  onBlur={(e) => {
+                    const val = parseFloat(e.target.value);
+                    const loan = input.loanAmount ?? 0;
+                    const pv = input.propertyValue ?? 0;
+                    if (!isNaN(val) && val > 0 && loan > 0) {
+                      const factor = val / 100;
+                      setStickyMiFactor(factor);
+                      setInput({
+                        mortgageInsuranceMonthly: Math.round((loan * factor) / 12 * 100) / 100,
+                        loanAmount: loan,
+                        propertyValue: pv,
+                      });
+                    }
+                  }}
+                />
+                <span className="text-xs text-gray-400">%</span>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

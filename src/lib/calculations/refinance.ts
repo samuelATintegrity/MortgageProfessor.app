@@ -25,6 +25,17 @@ export interface RefiInput {
   // How to pay closing costs
   payingCostsMethod: "out_of_pocket" | "roll_into_loan" | "split";
   partialOutOfPocket?: number; // for split
+
+  // Additional benefits
+  escrowRefundAmount: number; // refund from current escrow account
+  currentPaymentIncludesEscrow: boolean; // whether current payment includes taxes/insurance
+}
+
+export interface AcceleratedPayoff {
+  termMonths: number;
+  monthsSaved: number;
+  yearsSaved: number;
+  interestSaved: number;
 }
 
 export interface RefiResult {
@@ -43,6 +54,15 @@ export interface RefiResult {
   totalInterestSavings: number;
   breakEvenMonths: number;
   dailyInterestSaved: number;
+
+  // Accelerated payoff
+  acceleratedPayoff: AcceleratedPayoff | null;
+
+  // Additional benefits
+  additionalBenefits: {
+    skippedPaymentsValue: number;
+    escrowRefundValue: number;
+  };
 
   // Summary
   summaryText: string;
@@ -118,6 +138,47 @@ export function calculateRefinance(input: RefiInput): RefiResult {
     .toDecimalPlaces(2)
     .toNumber();
 
+  // Accelerated payoff: if current payment > new payment, how fast would the new loan pay off?
+  let acceleratedPayoff: AcceleratedPayoff | null = null;
+  if (currentPayment > newPayment && newLoanAmt > 0) {
+    const monthlyRate = new Decimal(input.newRate).div(12);
+    let balance = new Decimal(newLoanAmt);
+    let accelMonths = 0;
+    let accelInterest = new Decimal(0);
+    const accelPayment = new Decimal(currentPayment);
+    const fullTermMonths = input.newTermYears * 12;
+
+    while (balance.gt(0) && accelMonths < fullTermMonths) {
+      const interest = balance.mul(monthlyRate).toDecimalPlaces(2);
+      accelInterest = accelInterest.plus(interest);
+      let principal = accelPayment.minus(interest);
+      if (principal.gt(balance)) {
+        principal = balance;
+      }
+      balance = balance.minus(principal);
+      accelMonths++;
+    }
+
+    const monthsSaved = fullTermMonths - accelMonths;
+    const accelInterestSaved = new Decimal(newTotalInt)
+      .minus(accelInterest)
+      .toDecimalPlaces(2)
+      .toNumber();
+
+    if (monthsSaved > 0) {
+      acceleratedPayoff = {
+        termMonths: accelMonths,
+        monthsSaved,
+        yearsSaved: parseFloat((monthsSaved / 12).toFixed(1)),
+        interestSaved: accelInterestSaved,
+      };
+    }
+  }
+
+  // Additional benefits
+  const skippedPaymentsValue = new Decimal(currentPayment).mul(2).toDecimalPlaces(2).toNumber();
+  const escrowRefundValue = input.escrowRefundAmount ?? 0;
+
   // Generate summary
   const paymentDirection = monthlySavings >= 0 ? "lower" : "raise";
   const absMonthlySavings = Math.abs(monthlySavings);
@@ -146,6 +207,11 @@ export function calculateRefinance(input: RefiInput): RefiResult {
     totalInterestSavings: interestSavings,
     breakEvenMonths: breakEven,
     dailyInterestSaved: dailySaved,
+    acceleratedPayoff,
+    additionalBenefits: {
+      skippedPaymentsValue,
+      escrowRefundValue,
+    },
     summaryText,
   };
 }

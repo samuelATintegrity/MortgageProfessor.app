@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Menu, LogOut, User, GraduationCap } from "lucide-react";
+import { Menu, LogOut, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -70,9 +70,8 @@ export function Header({ user }: HeaderProps) {
           </SheetTrigger>
           <SheetContent side="left" className="w-64 p-0">
             <SheetHeader className="px-6 py-5 border-b">
-              <SheetTitle className="flex items-center gap-2">
-                <GraduationCap className="h-5 w-5 text-primary" />
-                Mortgage Professor
+              <SheetTitle>
+                <img src="/logo.png" alt="Mortgage Professor" className="h-7 w-auto" />
               </SheetTitle>
             </SheetHeader>
             <div className="px-3 py-4">

@@ -15,6 +15,7 @@ interface ComparisonState {
   isProcessing: boolean;
   parseError: string | null;
   savedId: string | null;
+  headerColor: string;
 
   setProcessing: (val: boolean) => void;
   setParseError: (err: string | null) => void;
@@ -22,8 +23,9 @@ interface ComparisonState {
   setLenderName: (name: string) => void;
   setCompanyName: (name: string) => void;
   setSavedId: (id: string | null) => void;
+  setHeaderColor: (color: string) => void;
   updateRow: (id: string, partial: Partial<ComparisonRow>) => void;
-  addRow: (category: ComparisonCategory) => void;
+  addRow: (category: ComparisonCategory, closingCostCategory?: ClosingCostSubcategory) => void;
   removeRow: (id: string) => void;
   importFromQuote: (quoteData: SavedQuoteData, tierIndex: number) => void;
   loadSavedComparison: (data: SavedComparisonData) => void;
@@ -172,6 +174,7 @@ export const useComparisonStore = create<ComparisonState>((set, get) => ({
   isProcessing: false,
   parseError: null,
   savedId: null,
+  headerColor: "#1f2937",
 
   setProcessing: (val) => set({ isProcessing: val }),
   setParseError: (err) => set({ parseError: err }),
@@ -191,13 +194,14 @@ export const useComparisonStore = create<ComparisonState>((set, get) => ({
   setLenderName: (name) => set({ lenderName: name }),
   setCompanyName: (name) => set({ companyName: name }),
   setSavedId: (id) => set({ savedId: id }),
+  setHeaderColor: (color) => set({ headerColor: color }),
 
   updateRow: (id, partial) =>
     set((state) => ({
       rows: state.rows.map((r) => (r.id === id ? { ...r, ...partial } : r)),
     })),
 
-  addRow: (category) =>
+  addRow: (category, closingCostCategory?) =>
     set((state) => ({
       rows: [
         ...state.rows,
@@ -209,6 +213,7 @@ export const useComparisonStore = create<ComparisonState>((set, get) => ({
           competitorValue: 0,
           userValue: 0,
           format: "currency",
+          ...(category === "closing_costs" ? { closingCostCategory: closingCostCategory ?? "other" } : {}),
         },
       ],
     })),
@@ -317,5 +322,6 @@ export const useComparisonStore = create<ComparisonState>((set, get) => ({
       isProcessing: false,
       parseError: null,
       savedId: null,
+      headerColor: "#1f2937",
     }),
 }));
