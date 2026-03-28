@@ -91,7 +91,7 @@ export default async function DashboardPage() {
       id: q.id,
       type: q.quote_type === "itemized" ? "Itemized" : "Quick Quote",
       title: q.client_name || `${fmt.format(q.base_loan_amount)}`,
-      subtitle: `${q.loan_type === "conventional" ? "Conv" : q.loan_type === "fha" ? "FHA" : q.loan_type === "va" ? "VA" : "$0 Down"} — ${fmt.format(q.property_value)} value`,
+      subtitle: `${({ conventional: "Conv", fha: "FHA", va: "VA", usda: "USDA", non_qm: "Non-QM", jumbo: "Jumbo" } as Record<string, string>)[q.loan_type] ?? q.loan_type} — ${fmt.format(q.property_value)} value`,
       href: q.quote_type === "itemized" ? "/itemized" : "/quotes",
       date: q.created_at,
     })),

@@ -64,7 +64,7 @@ export function ItemizedActionBar({ captureRef }: ItemizedActionBarProps) {
         prepaidInterestDays: input.prepaidInterestDays ?? 15,
         sellerCredit: input.sellerCredit ?? 0,
         buydownAmount: input.buydownAmount ?? 0,
-        vaFundingFee: input.vaFundingFee ?? 0,
+        vaFundingFee: result?.financedFeeAmount ?? 0,
         results: { input: input as Record<string, unknown>, result: result as unknown as Record<string, unknown> },
       });
       if (res.error) {

@@ -35,14 +35,16 @@ import {
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-const LOAN_TYPES = ["conventional", "fha", "va", "zero_down"] as const;
+const LOAN_TYPES = ["conventional", "fha", "va", "usda", "non_qm", "jumbo"] as const;
 type LoanType = (typeof LOAN_TYPES)[number];
 
 const LOAN_TYPE_LABELS: Record<LoanType, string> = {
   conventional: "Conventional",
   fha: "FHA",
   va: "VA",
-  zero_down: "$0 Down",
+  usda: "USDA",
+  non_qm: "Non-QM",
+  jumbo: "Jumbo",
 };
 
 const TIERS = ["low_rate", "par_rate", "low_cost"] as const;
@@ -76,7 +78,9 @@ const rateSheetSchema = z.object({
   conventional: loanTypeSchema,
   fha: loanTypeSchema,
   va: loanTypeSchema,
-  zero_down: loanTypeSchema,
+  usda: loanTypeSchema,
+  non_qm: loanTypeSchema,
+  jumbo: loanTypeSchema,
 });
 
 type RateSheetValues = z.infer<typeof rateSheetSchema>;
@@ -96,7 +100,9 @@ function emptySheet(): RateSheetValues {
     conventional: emptyLoanType(),
     fha: emptyLoanType(),
     va: emptyLoanType(),
-    zero_down: emptyLoanType(),
+    usda: emptyLoanType(),
+    non_qm: emptyLoanType(),
+    jumbo: emptyLoanType(),
   };
 }
 

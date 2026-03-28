@@ -32,26 +32,50 @@ export function BrandingUploader({ currentUrl, onUpload }: BrandingUploaderProps
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const ext = file.name.split(".").pop() ?? "png";
-      const path = `${user.id}/logo.${ext}`;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("No active session");
 
-      // Upload to storage (upsert)
-      const { error: uploadError } = await supabase.storage
-        .from("branding")
-        .upload(path, file, { upsert: true });
+      // Always use a fixed filename so upsert replaces the old file
+      const path = `${user.id}/logo`;
 
-      if (uploadError) throw uploadError;
+      // Upload via direct fetch to avoid SDK JSON parsing issues
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const uploadUrl = `${supabaseUrl}/storage/v1/object/branding/${path}`;
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from("branding")
-        .getPublicUrl(path);
+      const res = await fetch(uploadUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "x-upsert": "true",
+          "content-type": file.type,
+          "cache-control": "0",
+        },
+        body: file,
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        let msg = `Upload failed (${res.status})`;
+        try {
+          const json = JSON.parse(text);
+          msg = json.message || json.error || msg;
+        } catch {
+          // response wasn't JSON, use status text
+        }
+        throw new Error(msg);
+      }
+
+      // Build public URL with cache-buster so browser loads the new image
+      const cacheBuster = Date.now();
+      const publicUrl = `${supabaseUrl}/storage/v1/object/public/branding/${path}?v=${cacheBuster}`;
 
       // Update profile
-      await supabase
+      const { error: profileError } = await supabase
         .from("profiles")
         .update({ logo_url: publicUrl })
         .eq("id", user.id);
+
+      if (profileError) throw profileError;
 
       onUpload(publicUrl);
     } catch (err: unknown) {

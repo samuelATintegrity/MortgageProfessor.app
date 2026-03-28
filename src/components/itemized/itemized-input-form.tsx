@@ -1,10 +1,13 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import { useItemizedStore } from "@/stores/itemized-store";
+import { useQuoteStore } from "@/stores/quote-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectOption } from "@/components/ui/select";
+import { calculateFinancedFeeAmount } from "@/lib/calculations/fees";
 
 function CurrencyInput({
   label,
@@ -47,6 +50,7 @@ function NumberInput({
   max,
   step,
   suffix,
+  allowNegative,
 }: {
   label: string;
   value: number | undefined;
@@ -56,19 +60,51 @@ function NumberInput({
   max?: number;
   step?: number;
   suffix?: string;
+  allowNegative?: boolean;
 }) {
+  const [rawValue, setRawValue] = useState<string>(value?.toString() ?? "");
+  const isFocused = useRef(false);
+
+  // Sync from external value changes when not focused
+  useEffect(() => {
+    if (!isFocused.current) {
+      setRawValue(value?.toString() ?? "");
+    }
+  }, [value]);
+
   return (
     <div className="space-y-1">
       <Label htmlFor={id}>{label}</Label>
       <div className="relative">
         <Input
           id={id}
-          type="number"
-          step={step ?? 1}
-          min={min}
-          max={max}
-          value={value ?? ""}
-          onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+          type="text"
+          inputMode="decimal"
+          value={isFocused.current ? rawValue : (value ?? "")}
+          onFocus={() => {
+            isFocused.current = true;
+            setRawValue(value?.toString() ?? "");
+          }}
+          onChange={(e) => {
+            const raw = e.target.value;
+            const pattern = allowNegative !== false
+              ? /^-?\d*\.?\d*$/
+              : /^\d*\.?\d*$/;
+            if (!pattern.test(raw) && raw !== "") return;
+            setRawValue(raw);
+            const parsed = parseFloat(raw);
+            if (!isNaN(parsed)) onChange(parsed);
+          }}
+          onBlur={(e) => {
+            isFocused.current = false;
+            const parsed = parseFloat(e.target.value);
+            if (!isNaN(parsed)) {
+              onChange(parsed);
+            } else {
+              onChange(0);
+            }
+            setRawValue("");
+          }}
         />
         {suffix && (
           <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
@@ -82,9 +118,21 @@ function NumberInput({
 
 export function ItemizedInputForm() {
   const { input, setInput } = useItemizedStore();
-
+  const { sectionHeaderColor, setSectionHeaderColor } = useQuoteStore();
   const isVA = input.loanType === "va";
   const isFHA = input.loanType === "fha";
+  const isUSDA = input.loanType === "usda";
+  const isRefinance = input.transactionType === "refinance";
+
+  // Calculate financed fee for display
+  const financedFee = (isFHA || isVA || isUSDA)
+    ? calculateFinancedFeeAmount(
+        input.loanAmount ?? 0,
+        input.loanType ?? "conventional",
+        input.vaFundingFeePercent ?? 0,
+        input.fhaUfmipRefund ?? 0
+      )
+    : null;
 
   return (
     <div className="space-y-4">
@@ -94,6 +142,20 @@ export function ItemizedInputForm() {
           <CardTitle className="text-base">Loan Details</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <Label htmlFor="transactionType">Transaction Type</Label>
+            <Select
+              id="transactionType"
+              value={input.transactionType ?? "purchase"}
+              onChange={(e) =>
+                setInput({ transactionType: e.target.value as "purchase" | "refinance" })
+              }
+            >
+              <SelectOption value="purchase">Purchase</SelectOption>
+              <SelectOption value="refinance">Refinance</SelectOption>
+            </Select>
+          </div>
+
           <div className="space-y-1">
             <Label htmlFor="loanType">Loan Type</Label>
             <Select
@@ -105,14 +167,18 @@ export function ItemizedInputForm() {
                     | "conventional"
                     | "fha"
                     | "va"
-                    | "zero_down",
+                    | "usda"
+                    | "non_qm"
+                    | "jumbo",
                 })
               }
             >
               <SelectOption value="conventional">Conventional</SelectOption>
               <SelectOption value="fha">FHA</SelectOption>
               <SelectOption value="va">VA</SelectOption>
-              <SelectOption value="zero_down">$0 Down</SelectOption>
+              <SelectOption value="usda">USDA</SelectOption>
+              <SelectOption value="non_qm">Non-QM</SelectOption>
+              <SelectOption value="jumbo">Jumbo</SelectOption>
             </Select>
           </div>
 
@@ -392,21 +458,91 @@ export function ItemizedInputForm() {
             onChange={(val) => setInput({ buydownAmount: val })}
           />
           {isVA && (
-            <CurrencyInput
-              label="VA Funding Fee"
-              id="vaFundingFee"
-              value={input.vaFundingFee}
-              onChange={(val) => setInput({ vaFundingFee: val })}
-            />
+            <div className="space-y-1">
+              <Label htmlFor="vaFundingFeePercent">VA Funding Fee %</Label>
+              <Select
+                id="vaFundingFeePercent"
+                value={String(input.vaFundingFeePercent ?? 0)}
+                onChange={(e) =>
+                  setInput({ vaFundingFeePercent: parseFloat(e.target.value) })
+                }
+              >
+                <SelectOption value="0">0% (Exempt)</SelectOption>
+                <SelectOption value="0.005">0.5%</SelectOption>
+                <SelectOption value="0.01">1.0%</SelectOption>
+                <SelectOption value="0.0125">1.25%</SelectOption>
+                <SelectOption value="0.015">1.5%</SelectOption>
+                <SelectOption value="0.0215">2.15%</SelectOption>
+                <SelectOption value="0.024">2.4%</SelectOption>
+                <SelectOption value="0.0225">2.25%</SelectOption>
+                <SelectOption value="0.033">3.3%</SelectOption>
+              </Select>
+              {financedFee && financedFee.feeAmount > 0 && (
+                <p className="text-xs text-blue-600 mt-1">
+                  VA Funding Fee: {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(financedFee.feeAmount)} →
+                  Total Loan: {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(financedFee.totalLoanAmount)}
+                </p>
+              )}
+            </div>
           )}
           {isFHA && (
-            <CurrencyInput
-              label="FHA Upfront MIP"
-              id="fhaUpfrontMIP"
-              value={input.fhaUpfrontMIP}
-              onChange={(val) => setInput({ fhaUpfrontMIP: val })}
-            />
+            <div className="sm:col-span-2">
+              <div className="rounded-md bg-blue-50 border border-blue-200 p-3 text-sm text-blue-800">
+                <p className="font-medium">UFMIP: 1.75% — auto-calculated</p>
+                {financedFee && (
+                  <p className="text-xs mt-1">
+                    UFMIP: {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(financedFee.feeAmount)} →
+                    Total Loan: {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(financedFee.totalLoanAmount)}
+                  </p>
+                )}
+              </div>
+              {isRefinance && (
+                <div className="mt-2">
+                  <CurrencyInput
+                    label="FHA UFMIP Refund"
+                    id="fhaUfmipRefund"
+                    value={input.fhaUfmipRefund}
+                    onChange={(val) => setInput({ fhaUfmipRefund: val })}
+                  />
+                </div>
+              )}
+            </div>
           )}
+          {isUSDA && (
+            <div className="sm:col-span-2">
+              <div className="rounded-md bg-green-50 border border-green-200 p-3 text-sm text-green-800">
+                <p className="font-medium">Guarantee Fee: 1.0% — auto-calculated</p>
+                {financedFee && (
+                  <p className="text-xs mt-1">
+                    Fee: {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(financedFee.feeAmount)} →
+                    Total Loan: {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(financedFee.totalLoanAmount)}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Appearance */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Appearance</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <Label htmlFor="sectionHeaderColor">Section Header Color</Label>
+            <div className="flex items-center gap-2">
+              <input
+                id="sectionHeaderColor"
+                type="color"
+                value={sectionHeaderColor}
+                onChange={(e) => setSectionHeaderColor(e.target.value)}
+                className="h-9 w-12 rounded border cursor-pointer"
+              />
+              <span className="text-sm text-muted-foreground">{sectionHeaderColor}</span>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

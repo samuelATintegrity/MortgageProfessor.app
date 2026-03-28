@@ -67,7 +67,7 @@ const FONT_OPTIONS = [
 
 export default function SettingsPage() {
   const supabase = createClient();
-  const { brandingImageUrl, setBrandingImageUrl, headlineFont, setHeadlineFont } = useQuoteStore();
+  const { brandingImageUrl, setBrandingImageUrl, headlineFont, setHeadlineFont, profile, setProfile, brandingToggles, setBrandingToggles } = useQuoteStore();
 
   const [loading, setLoading] = useState(true);
   const [profileMsg, setProfileMsg] = useState<{
@@ -409,6 +409,98 @@ export default function SettingsPage() {
                   currentUrl={brandingImageUrl}
                   onUpload={setBrandingImageUrl}
                 />
+              </div>
+
+              <Separator />
+
+              {/* Quote Header Info */}
+              <div className="space-y-4">
+                <div>
+                  <Label>Quote Header Details</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Toggle which details appear in the quote header. These pull from your profile.
+                  </p>
+                </div>
+
+                {/* Name toggle + input */}
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={brandingToggles.showName}
+                    onChange={(e) => setBrandingToggles({ showName: e.target.checked })}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <div className="flex-1">
+                    <Label htmlFor="brandingName">Full Name</Label>
+                    <Input
+                      id="brandingName"
+                      value={profile.fullName}
+                      onChange={(e) => setProfile({ fullName: e.target.value })}
+                      placeholder="Your name"
+                      className={brandingToggles.showName ? "" : "opacity-50"}
+                    />
+                  </div>
+                </div>
+
+                {/* Company toggle + input */}
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={brandingToggles.showCompany}
+                    onChange={(e) => setBrandingToggles({ showCompany: e.target.checked })}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <div className="flex-1">
+                    <Label htmlFor="brandingCompany">Company Name</Label>
+                    <Input
+                      id="brandingCompany"
+                      value={profile.companyName}
+                      onChange={(e) => setProfile({ companyName: e.target.value })}
+                      placeholder="Company name"
+                      className={brandingToggles.showCompany ? "" : "opacity-50"}
+                    />
+                  </div>
+                </div>
+
+                {/* NMLS toggle + input */}
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={brandingToggles.showNmls}
+                    onChange={(e) => setBrandingToggles({ showNmls: e.target.checked })}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <div className="flex-1">
+                    <Label htmlFor="brandingNmls">NMLS Number</Label>
+                    <Input
+                      id="brandingNmls"
+                      value={profile.nmlsNumber}
+                      onChange={(e) => setProfile({ nmlsNumber: e.target.value })}
+                      placeholder="NMLS ID"
+                      className={brandingToggles.showNmls ? "" : "opacity-50"}
+                    />
+                  </div>
+                </div>
+
+                {/* Live Preview */}
+                <div className="rounded-md border bg-white p-4 text-center">
+                  <p className="text-xs text-muted-foreground mb-2">Preview</p>
+                  {brandingImageUrl && (
+                    <div className="flex justify-center mb-2">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={brandingImageUrl} alt="Branding" className="max-h-16 w-auto object-contain" />
+                    </div>
+                  )}
+                  {brandingToggles.showName && profile.fullName && (
+                    <p className="text-lg font-bold text-gray-800">{profile.fullName}</p>
+                  )}
+                  {brandingToggles.showCompany && profile.companyName && (
+                    <p className="text-sm text-gray-600">{profile.companyName}</p>
+                  )}
+                  {brandingToggles.showNmls && profile.nmlsNumber && (
+                    <p className="text-xs text-gray-500">NMLS# {profile.nmlsNumber}</p>
+                  )}
+                </div>
               </div>
 
               <Separator />

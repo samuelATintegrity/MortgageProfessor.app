@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type RefObject } from "react";
-import { toPng } from "html-to-image";
+import { toPng, toCanvas } from "html-to-image";
 import { Camera, FileDown, Save, Copy, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -38,8 +38,46 @@ export function QuoteActionBar({ captureRef }: QuoteActionBarProps) {
     }
   }
 
-  function handleExportPdf() {
-    toast({ title: "Coming soon", description: "PDF export is under development" });
+  async function handleExportPdf() {
+    if (!captureRef.current) return;
+    try {
+      toast({ title: "Generating PDF…", description: "Please wait" });
+
+      // Capture the quote element as a canvas at 2x resolution
+      const canvas = await toCanvas(captureRef.current, {
+        quality: 1,
+        pixelRatio: 2,
+      });
+
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+
+      // Dynamic import to keep bundle size down
+      const { jsPDF } = await import("jspdf");
+
+      // Use the aspect ratio of the captured element to size the PDF
+      // Standard letter width in points = 612, but we'll use mm for jsPDF
+      const pdfWidthMm = 210; // A4 width
+      const pdfHeightMm = (imgHeight / imgWidth) * pdfWidthMm;
+
+      const pdf = new jsPDF({
+        orientation: pdfHeightMm > pdfWidthMm ? "portrait" : "landscape",
+        unit: "mm",
+        format: [pdfWidthMm, pdfHeightMm + 10], // +10 for small margin
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      pdf.addImage(imgData, "PNG", 0, 5, pdfWidthMm, pdfHeightMm);
+      pdf.save(`mortgage-quote-${Date.now()}.pdf`);
+
+      toast({ title: "PDF exported", description: "Quote saved as PDF" });
+    } catch {
+      toast({
+        title: "Export failed",
+        description: "Could not generate PDF",
+        variant: "destructive",
+      });
+    }
   }
 
   async function handleSaveQuote() {
@@ -64,7 +102,7 @@ export function QuoteActionBar({ captureRef }: QuoteActionBarProps) {
         prepaidInterestDays: input.prepaidInterestDays ?? 15,
         sellerCredit: input.sellerCredit ?? 0,
         buydownAmount: 0,
-        vaFundingFee: input.vaFundingFee ?? 0,
+        vaFundingFee: result?.financedFeeAmount ?? 0,
         results: result as unknown as Record<string, unknown>,
       });
       if (res.error) {

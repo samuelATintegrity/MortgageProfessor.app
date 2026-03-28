@@ -46,10 +46,11 @@ const defaultInput: Partial<ItemizedInput> = {
   endorsementsFee: 150,
   pestInspectionFee: 0,
   surveyFee: 0,
+  transactionType: "purchase",
   sellerCredit: 0,
   buydownAmount: 0,
-  vaFundingFee: 0,
-  fhaUpfrontMIP: 0,
+  vaFundingFeePercent: 0,
+  fhaUfmipRefund: 0,
 };
 
 export const useItemizedStore = create<ItemizedState>((set, get) => ({

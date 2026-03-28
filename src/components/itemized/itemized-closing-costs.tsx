@@ -2,6 +2,7 @@
 
 import { forwardRef } from "react";
 import { useItemizedStore } from "@/stores/itemized-store";
+import { useQuoteStore } from "@/stores/quote-store";
 import type { ItemizedLineItem } from "@/lib/calculations/itemized";
 
 const fmt = new Intl.NumberFormat("en-US", {
@@ -14,9 +15,9 @@ function fmtRate(rate: number) {
   return (rate * 100).toFixed(3) + "%";
 }
 
-function SectionHeader({ children }: { children: React.ReactNode }) {
+function SectionHeader({ children, color }: { children: React.ReactNode; color?: string }) {
   return (
-    <tr className="bg-gray-800 text-white">
+    <tr style={{ backgroundColor: color ?? "#1f2937" }} className="text-white">
       <td colSpan={2} className="px-4 py-2 font-semibold text-sm">
         {children}
       </td>
@@ -73,6 +74,7 @@ export const ItemizedClosingCosts = forwardRef<
   ItemizedClosingCostsProps
 >(function ItemizedClosingCosts({ className }, ref) {
   const { input, result } = useItemizedStore();
+  const { brandingImageUrl, headlineFont, profile, brandingToggles, sectionHeaderColor } = useQuoteStore();
 
   if (!result) {
     return (
@@ -82,36 +84,78 @@ export const ItemizedClosingCosts = forwardRef<
     );
   }
 
+  const headerColor = sectionHeaderColor || "#1f2937";
+
   const loanTypeLabel =
-    input.loanType === "conventional"
-      ? "Conventional"
-      : input.loanType === "fha"
-      ? "FHA"
-      : input.loanType === "va"
-      ? "VA"
-      : "$0 Down";
+    ({ conventional: "Conventional", fha: "FHA", va: "VA", usda: "USDA", non_qm: "Non-QM", jumbo: "Jumbo" } as Record<string, string>)[input.loanType ?? "conventional"] ?? input.loanType;
+
+  const transactionLabel = input.transactionType === "refinance" ? "Refinance" : "Purchase";
+
+  const hasFinancedFee = (result.financedFeeAmount ?? 0) > 0;
 
   return (
     <div
       ref={ref}
       className={`bg-white text-gray-900 p-6 rounded-lg ${className ?? ""}`}
     >
-      {/* Header */}
+      {/* Header / Branding */}
       <div className="text-center mb-4">
-        <h2 className="text-lg font-bold text-gray-800">Mortgage Professor</h2>
-        <p className="text-xs text-gray-500">NMLS# 000000</p>
+        {brandingImageUrl && (
+          <div className="flex justify-center mb-1">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={brandingImageUrl}
+              alt="Branding"
+              className="max-h-20 w-auto object-contain"
+              crossOrigin="anonymous"
+            />
+          </div>
+        )}
+        {brandingToggles.showName && profile.fullName && (
+          <h2 className="text-lg font-bold text-gray-800">
+            {profile.fullName}
+          </h2>
+        )}
+        {brandingToggles.showCompany && profile.companyName && (
+          <p className="text-sm text-gray-600">{profile.companyName}</p>
+        )}
+        {brandingToggles.showNmls && profile.nmlsNumber && (
+          <p className="text-xs text-gray-500">
+            NMLS# {profile.nmlsNumber}
+          </p>
+        )}
+        {!brandingImageUrl && !(brandingToggles.showName && profile.fullName) && (
+          <h2 className="text-lg font-bold text-gray-800">Mortgage Professor</h2>
+        )}
       </div>
 
-      <h3 className="text-center text-base font-semibold mb-2">
-        {loanTypeLabel} Purchase — Itemized Closing Cost Estimate
+      <h3
+        className="text-center text-base font-semibold mb-2"
+        style={{ fontFamily: headlineFont !== "Inter" ? headlineFont : undefined }}
+      >
+        {loanTypeLabel} {transactionLabel} — Itemized Closing Cost Estimate
       </h3>
 
       {/* Loan Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1 text-sm mb-4 px-2">
-        <div>
-          <span className="text-gray-500">Loan Amount:</span>{" "}
-          <span className="font-medium">{fmt.format(result.loanAmount)}</span>
-        </div>
+        {hasFinancedFee ? (
+          <>
+            <div>
+              <span className="text-gray-500">Base Loan:</span>{" "}
+              <span className="font-medium">{fmt.format(result.baseLoanAmount)}</span>
+            </div>
+            <div>
+              <span className="text-gray-500">Total Loan:</span>{" "}
+              <span className="font-medium">{fmt.format(result.totalLoanAmount)}</span>
+              <span className="text-gray-400 text-xs ml-1">(incl. {result.financedFeeLabel})</span>
+            </div>
+          </>
+        ) : (
+          <div>
+            <span className="text-gray-500">Loan Amount:</span>{" "}
+            <span className="font-medium">{fmt.format(result.loanAmount)}</span>
+          </div>
+        )}
         <div>
           <span className="text-gray-500">Home Value:</span>{" "}
           <span className="font-medium">
@@ -121,7 +165,7 @@ export const ItemizedClosingCosts = forwardRef<
         <div>
           <span className="text-gray-500">LTV:</span>{" "}
           <span className="font-medium">
-            {(result.ltv * 100).toFixed(0)}%
+            {parseFloat((result.ltv * 100).toFixed(1))}%
           </span>
         </div>
         <div>
@@ -150,7 +194,7 @@ export const ItemizedClosingCosts = forwardRef<
       <table className="w-full text-sm border-collapse">
         <tbody>
           {/* Section A */}
-          <SectionHeader>Section A — Origination Charges</SectionHeader>
+          <SectionHeader color={headerColor}>Section A — Origination Charges</SectionHeader>
           {result.sectionA.map((item, i) => (
             <LineItemRow key={`a-${i}`} item={item} />
           ))}
@@ -167,7 +211,7 @@ export const ItemizedClosingCosts = forwardRef<
           <SubtotalRow label="Section A Subtotal" amount={result.sectionATotal} />
 
           {/* Section B */}
-          <SectionHeader>Section B — Third-Party Fees</SectionHeader>
+          <SectionHeader color={headerColor}>Section B — Third-Party Fees</SectionHeader>
           {result.sectionB.map((item, i) => (
             <LineItemRow key={`b-${i}`} item={item} />
           ))}
@@ -183,8 +227,25 @@ export const ItemizedClosingCosts = forwardRef<
           )}
           <SubtotalRow label="Section B Subtotal" amount={result.sectionBTotal} />
 
+          {/* Section C */}
+          <SectionHeader color={headerColor}>Section C — Title Charges</SectionHeader>
+          {result.sectionC.map((item, i) => (
+            <LineItemRow key={`c-title-${i}`} item={item} />
+          ))}
+          {result.sectionC.length === 0 && (
+            <tr>
+              <td
+                colSpan={2}
+                className="px-4 py-2 text-sm text-gray-400 italic"
+              >
+                No title charges
+              </td>
+            </tr>
+          )}
+          <SubtotalRow label="Section C Subtotal" amount={result.sectionCTotal} />
+
           {/* Prepaids */}
-          <SectionHeader>Prepaids &amp; Escrow Reserves</SectionHeader>
+          <SectionHeader color={headerColor}>Prepaids &amp; Escrow Reserves</SectionHeader>
           {result.prepaids.map((item, i) => (
             <LineItemRow key={`p-${i}`} item={item} />
           ))}
@@ -193,7 +254,7 @@ export const ItemizedClosingCosts = forwardRef<
           {/* Credits */}
           {result.credits.length > 0 && (
             <>
-              <SectionHeader>Credits</SectionHeader>
+              <SectionHeader color={headerColor}>Credits</SectionHeader>
               {result.credits.map((item, i) => (
                 <LineItemRow key={`c-${i}`} item={item} />
               ))}
@@ -219,7 +280,7 @@ export const ItemizedClosingCosts = forwardRef<
               {fmt.format(result.totalClosingCosts)}
             </td>
           </tr>
-          <tr className="bg-gray-800 text-white">
+          <tr style={{ backgroundColor: headerColor }} className="text-white">
             <td className="px-4 py-3 font-bold text-base">
               Total Cash at Closing
             </td>

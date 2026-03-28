@@ -126,6 +126,48 @@ export function calculateLenderFees(
 }
 
 /**
+ * Calculate the financed upfront fee for FHA (UFMIP), USDA (Guarantee Fee), or VA (Funding Fee).
+ * Returns the fee amount, total loan amount (base + fee), and a label for display.
+ */
+export function calculateFinancedFeeAmount(
+  baseLoanAmount: number,
+  loanType: string,
+  vaFundingFeePercent: number = 0,
+  fhaUfmipRefund: number = 0
+): { feeAmount: number; totalLoanAmount: number; feePercent: number; feeLabel: string; grossFee: number; refund: number } {
+  let feePercent = 0;
+  let feeLabel = "";
+  let refund = 0;
+
+  if (loanType === "fha") {
+    feePercent = 0.0175;
+    feeLabel = "UFMIP";
+    refund = Math.max(0, fhaUfmipRefund);
+  } else if (loanType === "usda") {
+    feePercent = 0.01;
+    feeLabel = "Guarantee Fee";
+  } else if (loanType === "va" && vaFundingFeePercent > 0) {
+    feePercent = vaFundingFeePercent;
+    feeLabel = "VA Funding Fee";
+  }
+
+  const grossFee = new Decimal(baseLoanAmount)
+    .mul(feePercent)
+    .toDecimalPlaces(2)
+    .toNumber();
+
+  // Net fee after refund (cannot go below 0)
+  const feeAmount = Math.max(0, new Decimal(grossFee).minus(refund).toDecimalPlaces(2).toNumber());
+
+  const totalLoanAmount = new Decimal(baseLoanAmount)
+    .plus(feeAmount)
+    .toDecimalPlaces(2)
+    .toNumber();
+
+  return { feeAmount, totalLoanAmount, feePercent, feeLabel, grossFee, refund };
+}
+
+/**
  * Calculate prepaid & third-party fees.
  */
 export function calculatePrepaidThirdParty(
