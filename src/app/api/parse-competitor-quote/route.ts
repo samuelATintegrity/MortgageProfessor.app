@@ -2,6 +2,9 @@ import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
 import type { CompetitorParseResult } from "@/lib/types/comparison";
 
+// Allow up to 30 seconds for AI to process document images/PDFs
+export const maxDuration = 30;
+
 const SYSTEM_PROMPT = `You are a mortgage document parser. Extract structured data from this competitor mortgage quote document.
 
 Return valid JSON matching this exact schema:
