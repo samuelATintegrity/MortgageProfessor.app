@@ -29,6 +29,7 @@ export interface RefiInput {
   // Additional benefits
   escrowRefundAmount: number; // refund from current escrow account
   currentPaymentIncludesEscrow: boolean; // whether current payment includes taxes/insurance
+  skippedMonths: number; // 1 or 2 months skipped during refi
 }
 
 export interface AcceleratedPayoff {
@@ -61,6 +62,7 @@ export interface RefiResult {
   // Additional benefits
   additionalBenefits: {
     skippedPaymentsValue: number;
+    skippedMonths: number;
     escrowRefundValue: number;
   };
 
@@ -176,7 +178,7 @@ export function calculateRefinance(input: RefiInput): RefiResult {
   }
 
   // Additional benefits
-  const skippedPaymentsValue = new Decimal(currentPayment).mul(2).toDecimalPlaces(2).toNumber();
+  const skippedPaymentsValue = new Decimal(currentPayment).mul(input.skippedMonths ?? 2).toDecimalPlaces(2).toNumber();
   const escrowRefundValue = input.escrowRefundAmount ?? 0;
 
   // Generate summary
@@ -210,6 +212,7 @@ export function calculateRefinance(input: RefiInput): RefiResult {
     acceleratedPayoff,
     additionalBenefits: {
       skippedPaymentsValue,
+      skippedMonths: input.skippedMonths ?? 2,
       escrowRefundValue,
     },
     summaryText,

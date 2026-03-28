@@ -1,25 +1,18 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { RefiInputForm } from "@/components/refinance/refi-input-form";
-import { RefiComparisonCard } from "@/components/refinance/refi-comparison-card";
-import { RefiActionBar } from "@/components/refinance/refi-action-bar";
-import { useRefiStore } from "@/stores/refi-store";
+import { DailyRatesInputForm } from "@/components/daily-rates/daily-rates-input-form";
+import { DailyRatesOutput } from "@/components/daily-rates/daily-rates-output";
+import { DailyRatesActionBar } from "@/components/daily-rates/daily-rates-action-bar";
 import { useQuoteStore } from "@/stores/quote-store";
 import { createClient } from "@/lib/supabase/client";
 
-export default function NewRefinanceAnalysisPage() {
+export default function NewDailyRatesPage() {
   const captureRef = useRef<HTMLDivElement>(null);
-  const calculate = useRefiStore((s) => s.calculate);
   const setProfile = useQuoteStore((s) => s.setProfile);
   const setBrandingImageUrl = useQuoteStore((s) => s.setBrandingImageUrl);
 
-  // Run initial calculation on mount so the comparison populates with defaults
-  useEffect(() => {
-    calculate();
-  }, [calculate]);
-
-  // Load profile data for branding header
+  // Load profile data for branding
   useEffect(() => {
     async function loadProfile() {
       const supabase = createClient();
@@ -48,26 +41,26 @@ export default function NewRefinanceAnalysisPage() {
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-bold">Refinance Analysis</h1>
+        <h1 className="text-2xl font-bold">Daily Rates</h1>
         <p className="text-muted-foreground mt-1">
-          Compare current loan vs refinance options
+          Create a branded rate image for social media
         </p>
       </div>
 
       {/* Two-panel layout */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-        {/* Left: Input Form (scrollable on desktop) */}
+        {/* Left: Input Form */}
         <div>
-          <RefiInputForm />
+          <DailyRatesInputForm />
         </div>
 
         {/* Right: Output */}
         <div className="space-y-4">
-          <RefiActionBar captureRef={captureRef} />
+          <DailyRatesActionBar captureRef={captureRef} />
 
-          {/* Capture wrapper with white bg for clean image output */}
-          <div className="rounded-lg border bg-white shadow-sm">
-            <RefiComparisonCard ref={captureRef} />
+          {/* Preview — scaled down, max width ~360px to keep it manageable */}
+          <div className="max-w-sm mx-auto">
+            <DailyRatesOutput ref={captureRef} />
           </div>
         </div>
       </div>

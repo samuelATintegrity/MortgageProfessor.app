@@ -36,6 +36,7 @@ const defaultInput: Partial<RefiInput> = {
   partialOutOfPocket: 0,
   escrowRefundAmount: 0,
   currentPaymentIncludesEscrow: true,
+  skippedMonths: 2,
 };
 
 const defaultVisibility: SectionVisibility = {

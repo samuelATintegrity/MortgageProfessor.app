@@ -6,14 +6,13 @@ import {
   LayoutDashboard,
   Zap,
   FileText,
-  TrendingDown,
   FolderOpen,
   ClipboardList,
   ArrowLeftRight,
+  Calendar,
   User,
   DollarSign,
   Percent,
-  Copy,
   LogOut,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -34,19 +33,18 @@ const mainNavItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Quick Quote", href: "/quotes/new", icon: Zap },
   { label: "Saved Quotes", href: "/quotes", icon: FileText },
-  { label: "Refinance Analysis", href: "/refinance/new", icon: TrendingDown },
+  { label: "Refinance Analysis", href: "/refinance/new", icon: Percent },
   { label: "Saved Analyses", href: "/refinance", icon: FolderOpen },
   { label: "Itemized Quote", href: "/itemized/new", icon: ClipboardList },
   { label: "Saved Itemized", href: "/itemized", icon: FolderOpen },
   { label: "Compare Quotes", href: "/comparison/new", icon: ArrowLeftRight },
   { label: "Saved Comparisons", href: "/comparison", icon: FolderOpen },
+  { label: "Daily Rates", href: "/daily-rates/new", icon: Calendar },
 ];
 
 const settingsNavItems = [
   { label: "Profile", href: "/settings", icon: User },
   { label: "Loan Costs", href: "/settings/loan-costs", icon: DollarSign },
-  { label: "Rate Sheet", href: "/settings/rate-sheet", icon: Percent },
-  { label: "Templates", href: "/settings/templates", icon: Copy },
 ];
 
 function getInitials(name?: string, email?: string): string {

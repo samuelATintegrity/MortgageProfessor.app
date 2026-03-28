@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920">
+  <defs>
+    <linearGradient id="forest" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f0fff4"/>
+      <stop offset="30%" stop-color="#c6f6d5"/>
+      <stop offset="60%" stop-color="#68d391"/>
+      <stop offset="100%" stop-color="#276749"/>
+    </linearGradient>
+  </defs>
+  <rect width="1080" height="1920" fill="url(#forest)"/>
+  <polygon points="100,900 200,500 300,900" fill="#276749" opacity="0.7"/>
+  <polygon points="250,950 380,450 510,950" fill="#2f855a" opacity="0.6"/>
+  <polygon points="450,900 580,400 710,900" fill="#276749" opacity="0.7"/>
+  <polygon points="600,950 750,500 900,950" fill="#2f855a" opacity="0.6"/>
+  <polygon points="780,900 880,450 980,900" fill="#276749" opacity="0.7"/>
+  <rect y="900" width="1080" height="1020" fill="#276749" opacity="0.5"/>
+  <rect y="1200" width="1080" height="720" fill="#1a4731" opacity="0.4"/>
+</svg>

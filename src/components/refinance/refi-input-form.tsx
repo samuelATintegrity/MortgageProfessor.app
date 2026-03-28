@@ -258,13 +258,37 @@ export function RefiInputForm() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Additional Benefits</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <CurrencyInput
-            label="Escrow Refund Amount"
-            id="escrowRefundAmount"
-            value={input.escrowRefundAmount}
-            onChange={(val) => setInput({ escrowRefundAmount: val })}
-          />
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <CurrencyInput
+              label="Escrow Refund Amount"
+              id="escrowRefundAmount"
+              value={input.escrowRefundAmount}
+              onChange={(val) => setInput({ escrowRefundAmount: val })}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Skipped Payments</Label>
+            <div className="flex gap-1">
+              {[1, 2].map((months) => {
+                const isActive = (input.skippedMonths ?? 2) === months;
+                return (
+                  <button
+                    key={months}
+                    type="button"
+                    className={`px-3 py-1 text-sm rounded border transition-colors ${
+                      isActive
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white text-gray-600 border-gray-300 hover:bg-gray-100"
+                    }`}
+                    onClick={() => setInput({ skippedMonths: months })}
+                  >
+                    {months} month{months > 1 ? "s" : ""}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </CardContent>
       </Card>
 

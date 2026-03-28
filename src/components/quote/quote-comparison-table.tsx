@@ -468,11 +468,8 @@ export const QuoteComparisonTable = forwardRef<
       </p>
 
       {/* Footer Disclaimer */}
-      <p className="text-[10px] text-gray-400 text-center mt-1 leading-relaxed">
-        This is not a loan commitment or guarantee of rates. Rates and fees are
-        subject to change without notice. Actual terms may vary based on credit
-        profile, property type, and other factors. Contact your loan officer for
-        a personalized quote.
+      <p className="text-[10px] text-gray-400 text-center mt-4">
+        Estimates only. Get an official Loan Estimate before choosing a loan.
       </p>
     </div>
   );

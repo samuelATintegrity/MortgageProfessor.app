@@ -99,48 +99,22 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
         {sectionVisibility.monthlyPayment && (
           <>
             <SectionHeader icon={DollarSign} title="Monthly Payment Comparison" />
-            <div className="grid grid-cols-3 gap-4 text-center mb-2">
-              <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
-                  Current Payment
-                </p>
-                <p className="text-xl font-bold">
-                  {fmt.format(result.currentMonthlyPayment)}
-                </p>
+            <div className="space-y-2 mb-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-500">Current Payment</span>
+                <span className="font-semibold">{fmt.format(result.currentMonthlyPayment)}</span>
               </div>
-              <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
-                  New Payment
-                </p>
-                <p className="text-xl font-bold">
-                  {fmt.format(result.newMonthlyPayment)}
-                </p>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-500">New Payment</span>
+                <span className="font-semibold">{fmt.format(result.newMonthlyPayment)}</span>
               </div>
-              <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
-                  Difference
-                </p>
-                <div className="flex items-center justify-center gap-1">
-                  {paymentSavings ? (
-                    <ArrowDown className="h-4 w-4 text-emerald-600" />
-                  ) : (
-                    <ArrowUp className="h-4 w-4 text-red-600" />
-                  )}
-                  <p
-                    className={`text-xl font-bold ${
-                      paymentSavings ? "text-emerald-600" : "text-red-600"
-                    }`}
-                  >
-                    {fmt.format(Math.abs(result.monthlyPaymentDifference))}
-                  </p>
-                </div>
-                <p
-                  className={`text-xs ${
-                    paymentSavings ? "text-emerald-600" : "text-red-600"
-                  }`}
-                >
-                  {paymentSavings ? "lower" : "higher"}
-                </p>
+              <div className="flex justify-between items-center pt-2 border-t">
+                <span className="text-sm font-medium">Difference</span>
+                <span className={`font-semibold flex items-center gap-1 ${paymentSavings ? "text-emerald-600" : "text-red-600"}`}>
+                  {paymentSavings ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />}
+                  {fmt.format(Math.abs(result.monthlyPaymentDifference))}
+                  <span className="text-xs ml-0.5">{paymentSavings ? "lower" : "higher"}</span>
+                </span>
               </div>
             </div>
             <Separator className="my-4" />
@@ -276,7 +250,7 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
               {sectionVisibility.showSkippedPayments && (
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-500">
-                    Skipped Payments (approx. 2 months)
+                    Skipped Payments ({result.additionalBenefits.skippedMonths} month{result.additionalBenefits.skippedMonths > 1 ? "s" : ""})
                   </span>
                   <span className="font-semibold text-emerald-600">
                     {fmt.format(result.additionalBenefits.skippedPaymentsValue)}
@@ -311,6 +285,11 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
             </div>
           </div>
         )}
+
+        {/* Disclaimer */}
+        <p className="text-[10px] text-gray-400 text-center mt-4">
+          Estimates only. Get an official Loan Estimate before choosing a loan.
+        </p>
       </div>
     );
   }

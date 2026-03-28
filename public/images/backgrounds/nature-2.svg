@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920">
+  <defs>
+    <linearGradient id="sunset" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a202c"/>
+      <stop offset="25%" stop-color="#553c9a"/>
+      <stop offset="50%" stop-color="#d53f8c"/>
+      <stop offset="75%" stop-color="#ed8936"/>
+      <stop offset="100%" stop-color="#fbd38d"/>
+    </linearGradient>
+  </defs>
+  <rect width="1080" height="1920" fill="url(#sunset)"/>
+  <ellipse cx="540" cy="1100" rx="300" ry="300" fill="#ed8936" opacity="0.4"/>
+  <polygon points="0,1400 300,1000 600,1300 900,1050 1080,1200 1080,1920 0,1920" fill="#1a202c" opacity="0.7"/>
+  <polygon points="0,1600 200,1350 500,1500 800,1300 1080,1450 1080,1920 0,1920" fill="#2d3748" opacity="0.6"/>
+</svg>
