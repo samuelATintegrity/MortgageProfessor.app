@@ -86,6 +86,13 @@
   --sidebar-border: oklch(0.3 0 0);
 }
 
+@font-face {
+  font-family: "Priestacy";
+  src: url("/fonts/Priestacy.woff") format("woff");
+  font-weight: 400;
+  font-display: swap;
+}
+
 @layer base {
   * {
     @apply border-border;

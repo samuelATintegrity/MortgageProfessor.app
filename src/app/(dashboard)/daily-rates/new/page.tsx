@@ -5,12 +5,27 @@ import { DailyRatesInputForm } from "@/components/daily-rates/daily-rates-input-
 import { DailyRatesOutput } from "@/components/daily-rates/daily-rates-output";
 import { DailyRatesActionBar } from "@/components/daily-rates/daily-rates-action-bar";
 import { useQuoteStore } from "@/stores/quote-store";
+import { useDailyRatesStore, BUNDLED_FONTS } from "@/stores/daily-rates-store";
 import { createClient } from "@/lib/supabase/client";
 
 export default function NewDailyRatesPage() {
   const captureRef = useRef<HTMLDivElement>(null);
   const setProfile = useQuoteStore((s) => s.setProfile);
   const setBrandingImageUrl = useQuoteStore((s) => s.setBrandingImageUrl);
+  const headlineFont = useDailyRatesStore((s) => s.input.headlineFont);
+
+  // Load Google Font dynamically when headlineFont changes
+  useEffect(() => {
+    if (headlineFont === "Inter") return;
+    if (BUNDLED_FONTS.includes(headlineFont)) return;
+    const id = `google-font-${headlineFont.replace(/\s/g, "-")}`;
+    if (document.getElementById(id)) return;
+    const link = document.createElement("link");
+    link.id = id;
+    link.rel = "stylesheet";
+    link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(headlineFont)}:wght@400;600;700&display=swap`;
+    document.head.appendChild(link);
+  }, [headlineFont]);
 
   // Load profile data for branding
   useEffect(() => {

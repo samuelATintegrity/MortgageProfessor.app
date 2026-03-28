@@ -12,15 +12,24 @@ interface DailyRatesActionBarProps {
 }
 
 export function DailyRatesActionBar({ captureRef }: DailyRatesActionBarProps) {
-  const date = useDailyRatesStore((s) => s.input.date);
+  const { date, outputWidth, outputHeight } = useDailyRatesStore((s) => s.input);
 
   async function handleCapture() {
     if (!captureRef.current) return;
     try {
+      // Wait for all fonts to be loaded before capture
+      await document.fonts.ready;
+
       const dataUrl = await toPng(captureRef.current, {
         quality: 0.95,
-        pixelRatio: 2,
+        pixelRatio: 1,
+        width: outputWidth,
+        height: outputHeight,
         backgroundColor: "#000000",
+        style: {
+          width: `${outputWidth}px`,
+          height: `${outputHeight}px`,
+        },
       });
       const link = document.createElement("a");
       link.download = `daily-rates-${date}.png`;
