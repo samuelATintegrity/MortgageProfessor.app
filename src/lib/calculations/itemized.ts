@@ -142,9 +142,6 @@ export function calculateItemized(input: ItemizedInput): ItemizedResult {
     sectionA.push({ label: "Lender Credit", amount: pointsCost, isCredit: true });
   }
 
-  if (input.processingFee > 0) {
-    sectionA.push({ label: "Processing Fee", amount: input.processingFee });
-  }
   if (input.underwritingFee > 0) {
     sectionA.push({ label: "Underwriting Fee", amount: input.underwritingFee });
   }
@@ -163,6 +160,9 @@ export function calculateItemized(input: ItemizedInput): ItemizedResult {
   // ---- Section B: Third-Party Fees ----
   const sectionB: ItemizedLineItem[] = [];
 
+  if (input.processingFee > 0) {
+    sectionB.push({ label: "Processing Fee", amount: input.processingFee });
+  }
   if (input.appraisalFee > 0) {
     sectionB.push({ label: "Appraisal Fee", amount: input.appraisalFee });
   }

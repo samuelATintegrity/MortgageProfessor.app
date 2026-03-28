@@ -69,10 +69,13 @@ export function ComparisonActionBar({ captureRef }: ComparisonActionBarProps) {
       if (result.error) {
         toast({ title: "Save failed", description: result.error, variant: "destructive" });
       } else {
-        if (result.id) setSavedId(result.id);
+        if (result.id) setSavedId(result.id as string);
         setSaveDialogOpen(false);
         toast({ title: savedId ? "Updated" : "Saved", description: "Comparison saved successfully." });
       }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "An unexpected error occurred";
+      toast({ title: "Save failed", description: message, variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -96,6 +99,9 @@ export function ComparisonActionBar({ captureRef }: ComparisonActionBarProps) {
       } else {
         toast({ title: "Updated", description: "Comparison updated." });
       }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "An unexpected error occurred";
+      toast({ title: "Update failed", description: message, variant: "destructive" });
     } finally {
       setSaving(false);
     }

@@ -285,12 +285,6 @@ export function ItemizedInputForm() {
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <CurrencyInput
-            label="Processing Fee"
-            id="processingFee"
-            value={input.processingFee}
-            onChange={(val) => setInput({ processingFee: val })}
-          />
-          <CurrencyInput
             label="Underwriting Fee"
             id="underwritingFee"
             value={input.underwritingFee}
@@ -313,6 +307,12 @@ export function ItemizedInputForm() {
           </CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <CurrencyInput
+            label="Processing Fee"
+            id="processingFee"
+            value={input.processingFee}
+            onChange={(val) => setInput({ processingFee: val })}
+          />
           <CurrencyInput
             label="Appraisal Fee"
             id="appraisalFee"

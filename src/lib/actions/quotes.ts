@@ -208,47 +208,52 @@ export async function saveComparison(data: {
   companyName: string;
   rows: unknown[];
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (!user) return { error: "Not authenticated" };
+    if (!user) return { error: "Not authenticated" };
 
-  const payload = {
-    user_id: user.id,
-    name: data.name || null,
-    competitor_lender: data.competitorLender || null,
-    competitor_file_name: data.competitorFileName || null,
-    company_name: data.companyName || null,
-    rows: data.rows,
-  };
+    const payload = {
+      user_id: user.id,
+      name: data.name || null,
+      competitor_lender: data.competitorLender || null,
+      competitor_file_name: data.competitorFileName || null,
+      company_name: data.companyName || null,
+      rows: data.rows,
+    };
 
-  if (data.id) {
-    // Update existing
-    const { error } = await supabase
+    if (data.id) {
+      // Update existing
+      const { error } = await supabase
+        .from("comparisons")
+        .update(payload)
+        .eq("id", data.id)
+        .eq("user_id", user.id);
+
+      if (error) return { error: error.message };
+
+      revalidatePath("/comparison");
+      return { success: true, id: data.id };
+    }
+
+    // Insert new
+    const { data: inserted, error } = await supabase
       .from("comparisons")
-      .update(payload)
-      .eq("id", data.id)
-      .eq("user_id", user.id);
+      .insert(payload)
+      .select("id")
+      .single();
 
     if (error) return { error: error.message };
 
     revalidatePath("/comparison");
-    return { success: true, id: data.id };
+    return { success: true, id: inserted.id };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to save comparison";
+    return { error: message };
   }
-
-  // Insert new
-  const { data: inserted, error } = await supabase
-    .from("comparisons")
-    .insert(payload)
-    .select("id")
-    .single();
-
-  if (error) return { error: error.message };
-
-  revalidatePath("/comparison");
-  return { success: true, id: inserted.id };
 }
 
 export async function deleteComparison(id: string) {
