@@ -164,7 +164,7 @@ export default function SignupPage() {
 
         <Button
           type="submit"
-          className="w-full"
+          className="w-full rounded-full bg-black hover:bg-gray-800 text-white"
           disabled={isSubmitting || success}
         >
           {isSubmitting && <Loader2 className="animate-spin" />}

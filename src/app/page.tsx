@@ -15,7 +15,7 @@ export default function LandingPage() {
       </h1>
       <p className="mt-2 text-lg text-gray-500">For Lexi to test out</p>
       <div className="mt-8">
-        <Link href="/signup" className={buttonVariants({ size: "lg" })}>
+        <Link href="/signup" className={buttonVariants({ size: "lg" }) + " rounded-full bg-black hover:bg-gray-800 text-white"}>
           Sign Up
         </Link>
       </div>

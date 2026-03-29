@@ -110,7 +110,7 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        <Button type="submit" className="w-full" disabled={isSubmitting || transitioning}>
+        <Button type="submit" className="w-full rounded-full bg-black hover:bg-gray-800 text-white" disabled={isSubmitting || transitioning}>
           {isSubmitting && <Loader2 className="animate-spin" />}
           Log In
         </Button>
