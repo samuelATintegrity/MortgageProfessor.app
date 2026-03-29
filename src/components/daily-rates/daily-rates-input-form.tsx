@@ -351,6 +351,24 @@ export function DailyRatesInputForm() {
               className="w-full"
             />
           </div>
+
+          {/* White overlay opacity */}
+          <div className="space-y-1">
+            <Label>
+              White Overlay ({Math.round(input.whiteOverlayOpacity * 100)}%)
+            </Label>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={5}
+              value={Math.round(input.whiteOverlayOpacity * 100)}
+              onChange={(e) =>
+                setInput({ whiteOverlayOpacity: parseInt(e.target.value) / 100 })
+              }
+              className="w-full"
+            />
+          </div>
         </CardContent>
       </Card>
 

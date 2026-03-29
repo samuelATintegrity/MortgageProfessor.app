@@ -63,113 +63,115 @@ export const DailyRatesOutput = forwardRef<HTMLDivElement>(
           crossOrigin="anonymous"
         />
 
-        {/* Overlay */}
+        {/* Dark Overlay */}
         <div
           className="absolute inset-0"
           style={{ backgroundColor: `rgba(0, 0, 0, ${input.overlayOpacity})` }}
         />
 
-        {/* Content overlay */}
-        <div className="absolute inset-0 flex flex-col p-[5%]">
-          {/* Top: Branding */}
-          <div className="text-center">
-            {brandingImageUrl && (
-              <div className="flex justify-center mb-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={brandingImageUrl}
-                  alt="Branding"
-                  className="max-h-[8%] w-auto object-contain drop-shadow-lg"
-                  style={{ maxHeight: "60px" }}
-                  crossOrigin="anonymous"
-                />
-              </div>
-            )}
-            {brandingToggles.showName && profile.fullName && (
-              <p className="text-lg font-bold drop-shadow-lg" style={{ color: input.headlineColor }}>
-                {profile.fullName}
-              </p>
-            )}
-            {brandingToggles.showCompany && profile.companyName && (
-              <p className="text-sm drop-shadow-lg" style={{ color: input.headlineColor, opacity: 0.9 }}>
-                {profile.companyName}
-              </p>
-            )}
-            {brandingToggles.showNmls && profile.nmlsNumber && (
-              <p className="text-xs drop-shadow-lg" style={{ color: input.headlineColor, opacity: 0.7 }}>
-                NMLS# {profile.nmlsNumber}
-              </p>
-            )}
-          </div>
+        {/* White Overlay */}
+        {input.whiteOverlayOpacity > 0 && (
+          <div
+            className="absolute inset-0"
+            style={{ backgroundColor: `rgba(255, 255, 255, ${input.whiteOverlayOpacity})` }}
+          />
+        )}
 
-          {/* Center: Rates */}
-          <div className="flex-1 flex flex-col items-center justify-center">
-            {/* Date */}
-            <p className="text-center text-sm mb-4 drop-shadow-lg" style={{ color: input.headlineColor, opacity: 0.8 }}>
-              {formatDate(input.date)}
+        {/* Branding — positioned at top, does not affect centering */}
+        <div className="absolute inset-x-0 top-0 p-[5%] text-center z-10">
+          {brandingImageUrl && (
+            <div className="flex justify-center mb-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={brandingImageUrl}
+                alt="Branding"
+                className="max-h-[8%] w-auto object-contain drop-shadow-lg"
+                style={{ maxHeight: "60px" }}
+                crossOrigin="anonymous"
+              />
+            </div>
+          )}
+          {brandingToggles.showName && profile.fullName && (
+            <p className="text-lg font-bold drop-shadow-lg" style={{ color: input.headlineColor }}>
+              {profile.fullName}
             </p>
+          )}
+          {brandingToggles.showCompany && profile.companyName && (
+            <p className="text-sm drop-shadow-lg" style={{ color: input.headlineColor, opacity: 0.9 }}>
+              {profile.companyName}
+            </p>
+          )}
+          {brandingToggles.showNmls && profile.nmlsNumber && (
+            <p className="text-xs drop-shadow-lg" style={{ color: input.headlineColor, opacity: 0.7 }}>
+              NMLS# {profile.nmlsNumber}
+            </p>
+          )}
+        </div>
 
-            {/* Title */}
-            <h2
-              className="text-center font-bold mb-4 drop-shadow-lg"
-              style={{
-                fontFamily: input.headlineFont !== "Inter" ? input.headlineFont : undefined,
-                fontSize: `${input.headlineFontSize}px`,
-                color: input.headlineColor,
-              }}
-            >
-              Today&apos;s Rates
-            </h2>
+        {/* Center: Rates — true centered in the image */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-[5%] z-10">
+          {/* Date */}
+          <p className="text-center text-sm mb-4 drop-shadow-lg" style={{ color: input.headlineColor, opacity: 0.8 }}>
+            {formatDate(input.date)}
+          </p>
 
-            {/* Rate Cards */}
-            <div className="space-y-2 w-full">
-              {visibleRates.map((entry) => (
-                <div
-                  key={entry.label}
-                  className="flex items-center justify-between bg-white/15 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/20"
+          {/* Title */}
+          <h2
+            className="text-center font-bold mb-4 drop-shadow-lg"
+            style={{
+              fontFamily: input.headlineFont !== "Inter" ? input.headlineFont : undefined,
+              fontSize: `${input.headlineFontSize}px`,
+              color: input.headlineColor,
+            }}
+          >
+            Today&apos;s Rates
+          </h2>
+
+          {/* Rate Cards */}
+          <div className="space-y-2 w-full">
+            {visibleRates.map((entry) => (
+              <div
+                key={entry.label}
+                className="flex items-center justify-between bg-white/15 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/20"
+              >
+                <span
+                  className="font-medium text-base drop-shadow"
+                  style={{ color: input.rateTextColor }}
                 >
-                  <span
-                    className="font-medium text-base drop-shadow"
-                    style={{ color: input.rateTextColor }}
-                  >
-                    {entry.label}
-                  </span>
-                  <span
-                    className="font-bold text-xl drop-shadow"
-                    style={{ color: input.rateTextColor }}
-                  >
-                    {formatRate(entry.rate)}
-                  </span>
-                </div>
+                  {entry.label}
+                </span>
+                <span
+                  className="font-bold text-xl drop-shadow"
+                  style={{ color: input.rateTextColor }}
+                >
+                  {formatRate(entry.rate)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom: Scenario Descriptions */}
+        {input.showScenarioDescriptions && visibleRates.length > 0 && (
+          <div className="absolute inset-x-0 bottom-0 p-[5%] z-10">
+            <div className="space-y-0.5 w-full">
+              {visibleRates.map((entry) => (
+                <p
+                  key={`scenario-${entry.label}`}
+                  className="text-[7px] leading-tight drop-shadow"
+                  style={{ color: input.rateTextColor, opacity: 0.6 }}
+                >
+                  {entry.label} rate based on a home value of{" "}
+                  {formatCurrency(input.propertyValue)} and{" "}
+                  {formatCurrency(input.loanAmount)} loan amount,{" "}
+                  {input.creditScore} credit score.
+                  {entry.isHomeReady &&
+                    " Income must be at or below 80% of the AMI."}
+                </p>
               ))}
             </div>
-
-            {/* Scenario Descriptions */}
-            {input.showScenarioDescriptions && visibleRates.length > 0 && (
-              <div className="mt-3 space-y-0.5 w-full">
-                {visibleRates.map((entry) => (
-                  <p
-                    key={`scenario-${entry.label}`}
-                    className="text-[7px] leading-tight drop-shadow"
-                    style={{ color: input.rateTextColor, opacity: 0.6 }}
-                  >
-                    {entry.label} rate based on a home value of{" "}
-                    {formatCurrency(input.propertyValue)} and{" "}
-                    {formatCurrency(input.loanAmount)} loan amount,{" "}
-                    {input.creditScore} credit score.
-                    {entry.isHomeReady &&
-                      " Income must be at or below 80% of the AMI."}
-                  </p>
-                ))}
-              </div>
-            )}
           </div>
-
-          {/* Bottom: Disclaimer */}
-          <p className="text-center text-[8px]" style={{ color: input.rateTextColor, opacity: 0.4 }}>
-            Estimates only. Get an official Loan Estimate before choosing a loan.
-          </p>
-        </div>
+        )}
       </div>
     );
   }
