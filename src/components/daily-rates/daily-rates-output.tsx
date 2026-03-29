@@ -117,9 +117,9 @@ export const DailyRatesOutput = forwardRef<HTMLDivElement>(
             Today&apos;s Rates
           </h2>
 
-          {/* Date — centered between title and first rate card */}
+          {/* Date — snug below title */}
           <p
-            className={`text-center drop-shadow-lg flex-1 flex items-center ${isVeryCompact ? "text-[10px]" : isCompact ? "text-xs" : "text-sm"}`}
+            className={`text-center drop-shadow-lg ${isVeryCompact ? "text-[10px] mb-1" : isCompact ? "text-xs mb-1.5" : "text-sm mb-3"}`}
             style={{ color: input.headlineColor, opacity: 0.8 }}
           >
             {formatDate(input.date)}
