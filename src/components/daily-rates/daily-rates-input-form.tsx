@@ -7,6 +7,7 @@ import {
   FONT_OPTIONS,
   BUNDLED_FONTS,
   DIMENSION_PRESETS,
+  getBackgroundsForDimension,
 } from "@/stores/daily-rates-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -238,7 +239,7 @@ export function DailyRatesInputForm() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-5 gap-2">
-            {BUNDLED_BACKGROUNDS.map((bg, i) => {
+            {getBackgroundsForDimension(input.outputWidth, input.outputHeight).map((bg, i) => {
               const isActive = input.backgroundImage === bg;
               return (
                 <button
@@ -365,6 +366,24 @@ export function DailyRatesInputForm() {
               value={Math.round(input.whiteOverlayOpacity * 100)}
               onChange={(e) =>
                 setInput({ whiteOverlayOpacity: parseInt(e.target.value) / 100 })
+              }
+              className="w-full"
+            />
+          </div>
+
+          {/* Background blur */}
+          <div className="space-y-1">
+            <Label>
+              Background Blur ({input.blurIntensity}px)
+            </Label>
+            <input
+              type="range"
+              min={0}
+              max={20}
+              step={1}
+              value={input.blurIntensity}
+              onChange={(e) =>
+                setInput({ blurIntensity: parseInt(e.target.value) })
               }
               className="w-full"
             />

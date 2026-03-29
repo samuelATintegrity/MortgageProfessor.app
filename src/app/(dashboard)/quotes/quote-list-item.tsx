@@ -39,8 +39,10 @@ export function QuoteListItem({ quote }: QuoteListItemProps) {
   const loanTypeLabel =
     ({ conventional: "Conv", fha: "FHA", va: "VA", usda: "USDA", non_qm: "Non-QM", jumbo: "Jumbo" } as Record<string, string>)[quote.loan_type] ?? quote.loan_type;
 
-  const title = quote.name || quote.client_name
-    ? `${quote.client_name || "Quote"} — ${fmt.format(quote.base_loan_amount)}`
+  const title = quote.name
+    ? quote.name
+    : quote.client_name
+    ? `${quote.client_name} — ${fmt.format(quote.base_loan_amount)}`
     : `${loanTypeLabel} ${quote.loan_term_years}yr — ${fmt.format(quote.base_loan_amount)}`;
 
   return (

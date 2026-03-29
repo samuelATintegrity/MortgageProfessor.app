@@ -23,6 +23,16 @@ function SectionHeader({ title }: { title: string }) {
   );
 }
 
+/** Standard row: label on left, value on right, with bottom border */
+function Row({ label, value, valueClass }: { label: string; value: string; valueClass?: string }) {
+  return (
+    <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+      <span className="text-sm text-gray-500">{label}</span>
+      <span className={`text-sm text-gray-500 ${valueClass ?? ""}`}>{value}</span>
+    </div>
+  );
+}
+
 export const RefiComparisonCard = forwardRef<HTMLDivElement>(
   function RefiComparisonCard(_props, ref) {
     const result = useRefiStore((s) => s.result);
@@ -89,20 +99,13 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
           <>
             <SectionHeader title="Monthly Payment Comparison" />
             <div className="space-y-2 mb-2">
-              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                <span className="text-sm text-gray-500">Current Payment</span>
-                <span className="font-semibold">{fmt.format(result.currentMonthlyPayment)}</span>
-              </div>
-              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                <span className="text-sm text-gray-500">New Payment</span>
-                <span className="font-semibold">{fmt.format(result.newMonthlyPayment)}</span>
-              </div>
-              <div className="flex justify-between items-center pt-2 border-t">
-                <span className="text-sm font-medium">Difference</span>
-                <span className={`font-semibold ${paymentSavings ? "text-emerald-600" : "text-red-600"}`}>
-                  {fmt.format(Math.abs(result.monthlyPaymentDifference))}
-                </span>
-              </div>
+              <Row label="Current Payment" value={fmt.format(result.currentMonthlyPayment)} />
+              <Row label="New Payment" value={fmt.format(result.newMonthlyPayment)} />
+              <Row
+                label="Difference"
+                value={fmt.format(Math.abs(result.monthlyPaymentDifference))}
+                valueClass={`font-semibold ${paymentSavings ? "!text-emerald-600" : "!text-red-600"}`}
+              />
             </div>
             <Separator className="my-4" />
           </>
@@ -113,34 +116,13 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
           <>
             <SectionHeader title="Interest Savings" />
             <div className="space-y-2 mb-2">
-              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                <span className="text-sm text-gray-500">
-                  Current Loan&apos;s Remaining Interest
-                </span>
-                <span className="font-semibold">
-                  {fmt.format(result.currentRemainingInterest)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                <span className="text-sm text-gray-500">
-                  New Loan Total Interest
-                </span>
-                <span className="font-semibold">
-                  {fmt.format(result.newTotalInterest)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center pt-2 border-t">
-                <span className="text-sm font-medium">
-                  Total Interest Savings
-                </span>
-                <span
-                  className={`text-lg font-bold ${
-                    interestSavings ? "text-emerald-600" : "text-red-600"
-                  }`}
-                >
-                  {fmt.format(Math.abs(result.totalInterestSavings))}
-                </span>
-              </div>
+              <Row label="Current Loan's Remaining Interest" value={fmt.format(result.currentRemainingInterest)} />
+              <Row label="New Loan Total Interest" value={fmt.format(result.newTotalInterest)} />
+              <Row
+                label="Total Interest Savings"
+                value={fmt.format(Math.abs(result.totalInterestSavings))}
+                valueClass={`font-semibold ${interestSavings ? "!text-emerald-600" : "!text-red-600"}`}
+              />
             </div>
             <Separator className="my-4" />
           </>
@@ -151,38 +133,16 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
           <>
             <SectionHeader title="Break-Even Analysis" />
             <div className="space-y-2 mb-2">
-              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                <span className="text-sm text-gray-500">
-                  Refinance Costs
-                </span>
-                <span className="font-semibold">
-                  {fmt.format(input.closingCosts ?? 0)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                <span className="text-sm text-gray-500">
-                  Time to Recoup Fees
-                </span>
-                <span className="font-semibold">
-                  {result.breakEvenMonths >= 0
-                    ? `${result.breakEvenMonths} months`
-                    : "N/A (payment increases)"}
-                </span>
-              </div>
-              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                <span className="text-sm text-gray-500">
-                  Daily Interest Saved
-                </span>
-                <span
-                  className={`font-semibold ${
-                    result.dailyInterestSaved >= 0
-                      ? "text-emerald-600"
-                      : "text-red-600"
-                  }`}
-                >
-                  {fmt.format(Math.abs(result.dailyInterestSaved))}
-                </span>
-              </div>
+              <Row label="Refinance Costs" value={fmt.format(input.closingCosts ?? 0)} />
+              <Row
+                label="Time to Recoup Fees"
+                value={result.breakEvenMonths >= 0 ? `${result.breakEvenMonths} months` : "N/A (payment increases)"}
+              />
+              <Row
+                label="Daily Interest Saved"
+                value={fmt.format(Math.abs(result.dailyInterestSaved))}
+                valueClass={`font-semibold ${result.dailyInterestSaved >= 0 ? "!text-emerald-600" : "!text-red-600"}`}
+              />
             </div>
             <Separator className="my-4" />
           </>
@@ -205,22 +165,16 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
                     : `${result.acceleratedPayoff.termMonths} months`}
                 </span>.
               </p>
-              <div className="flex justify-between items-center pt-2 border-t pb-2 border-b border-gray-100">
-                <span className="text-sm text-gray-500">
-                  Time Saved
-                </span>
-                <span className="font-semibold text-emerald-600">
-                  {result.acceleratedPayoff.yearsSaved.toFixed(1)} years
-                </span>
-              </div>
-              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                <span className="text-sm text-gray-500">
-                  Additional Interest Saved
-                </span>
-                <span className="font-semibold text-emerald-600">
-                  {fmt.format(result.acceleratedPayoff.interestSaved)}
-                </span>
-              </div>
+              <Row
+                label="Time Saved"
+                value={`${result.acceleratedPayoff.yearsSaved.toFixed(1)} years`}
+                valueClass="font-semibold !text-emerald-600"
+              />
+              <Row
+                label="Additional Interest Saved"
+                value={fmt.format(result.acceleratedPayoff.interestSaved)}
+                valueClass="font-semibold !text-emerald-600"
+              />
             </div>
             <Separator className="my-4" />
           </>
@@ -231,36 +185,13 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
           <>
             <SectionHeader title="Debt Payoff Analysis" />
             <div className="space-y-2 mb-2">
-              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                <span className="text-sm text-gray-500">
-                  Previous Total Monthly Payments
-                </span>
-                <span className="font-semibold">
-                  {fmt.format(result.debtPayoff.totalOldPayments)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                <span className="text-sm text-gray-500">
-                  New Mortgage Payment
-                </span>
-                <span className="font-semibold">
-                  {fmt.format(result.newMonthlyPayment)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center pt-2 border-t">
-                <span className="text-sm font-medium">
-                  Monthly Savings (with debt eliminated)
-                </span>
-                <span
-                  className={`text-lg font-bold ${
-                    result.debtPayoff.monthlySavingsWithDebt >= 0
-                      ? "text-emerald-600"
-                      : "text-red-600"
-                  }`}
-                >
-                  {fmt.format(Math.abs(result.debtPayoff.monthlySavingsWithDebt))}
-                </span>
-              </div>
+              <Row label="Previous Total Monthly Payments" value={fmt.format(result.debtPayoff.totalOldPayments)} />
+              <Row label="New Mortgage Payment" value={fmt.format(result.newMonthlyPayment)} />
+              <Row
+                label="Monthly Savings (with debt eliminated)"
+                value={fmt.format(Math.abs(result.debtPayoff.monthlySavingsWithDebt))}
+                valueClass={`font-semibold ${result.debtPayoff.monthlySavingsWithDebt >= 0 ? "!text-emerald-600" : "!text-red-600"}`}
+              />
               {result.debtPayoff.acceleratedPayoffYearsSaved > 0 && (
                 <>
                   <div className="pt-3">
@@ -278,22 +209,16 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
                       </span>.
                     </p>
                   </div>
-                  <div className="flex justify-between items-center pt-2 border-t pb-2 border-b border-gray-100">
-                    <span className="text-sm text-gray-500">
-                      Time Saved
-                    </span>
-                    <span className="font-semibold text-emerald-600">
-                      {result.debtPayoff.acceleratedPayoffYearsSaved.toFixed(1)} years
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                    <span className="text-sm text-gray-500">
-                      Additional Interest Saved
-                    </span>
-                    <span className="font-semibold text-emerald-600">
-                      {fmt.format(result.debtPayoff.acceleratedPayoffInterestSaved)}
-                    </span>
-                  </div>
+                  <Row
+                    label="Time Saved"
+                    value={`${result.debtPayoff.acceleratedPayoffYearsSaved.toFixed(1)} years`}
+                    valueClass="font-semibold !text-emerald-600"
+                  />
+                  <Row
+                    label="Additional Interest Saved"
+                    value={fmt.format(result.debtPayoff.acceleratedPayoffInterestSaved)}
+                    valueClass="font-semibold !text-emerald-600"
+                  />
                 </>
               )}
             </div>
@@ -307,24 +232,18 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
             <SectionHeader title="Additional Benefits" />
             <div className="space-y-2 mb-2">
               {sectionVisibility.showSkippedPayments && (
-                <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-500">
-                    Skipped Payments ({result.additionalBenefits.skippedMonths} month{result.additionalBenefits.skippedMonths > 1 ? "s" : ""})
-                  </span>
-                  <span className="font-semibold text-emerald-600">
-                    {fmt.format(result.additionalBenefits.skippedPaymentsValue)}
-                  </span>
-                </div>
+                <Row
+                  label={`Skipped Payments (${result.additionalBenefits.skippedMonths} month${result.additionalBenefits.skippedMonths > 1 ? "s" : ""})`}
+                  value={fmt.format(result.additionalBenefits.skippedPaymentsValue)}
+                  valueClass="font-semibold !text-emerald-600"
+                />
               )}
               {result.additionalBenefits.escrowRefundValue > 0 && (
-                <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-500">
-                    Escrow Account Refund
-                  </span>
-                  <span className="font-semibold text-emerald-600">
-                    {fmt.format(result.additionalBenefits.escrowRefundValue)}
-                  </span>
-                </div>
+                <Row
+                  label="Escrow Account Refund"
+                  value={fmt.format(result.additionalBenefits.escrowRefundValue)}
+                  valueClass="font-semibold !text-emerald-600"
+                />
               )}
             </div>
             <Separator className="my-4" />

@@ -59,7 +59,12 @@ export const DailyRatesOutput = forwardRef<HTMLDivElement>(
           src={input.backgroundImage}
           alt=""
           className="absolute inset-0 w-full h-full object-cover"
-          style={{ objectPosition: `center ${input.backgroundPosition}%` }}
+          style={{
+            objectPosition: `center ${input.backgroundPosition}%`,
+            filter: input.blurIntensity > 0 ? `blur(${input.blurIntensity}px)` : undefined,
+            // Scale slightly to prevent blur edge artifacts
+            transform: input.blurIntensity > 0 ? "scale(1.05)" : undefined,
+          }}
           crossOrigin="anonymous"
         />
 

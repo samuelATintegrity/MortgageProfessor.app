@@ -1,8 +1,8 @@
 "use client";
 
 import { type RefObject, useState } from "react";
-import { toPng } from "html-to-image";
-import { Camera, RotateCcw, Save, Loader2 } from "lucide-react";
+import { toPng, toCanvas } from "html-to-image";
+import { Camera, FileDown, RotateCcw, Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -49,6 +49,44 @@ export function ComparisonActionBar({ captureRef }: ComparisonActionBarProps) {
       toast({
         title: "Capture failed",
         description: "Could not generate image",
+        variant: "destructive",
+      });
+    }
+  }
+
+  async function handleExportPdf() {
+    if (!captureRef.current) return;
+    try {
+      toast({ title: "Generating PDF…", description: "Please wait" });
+
+      const canvas = await toCanvas(captureRef.current, {
+        quality: 1,
+        pixelRatio: 2,
+      });
+
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+
+      const { jsPDF } = await import("jspdf");
+
+      const pdfWidthMm = 210;
+      const pdfHeightMm = (imgHeight / imgWidth) * pdfWidthMm;
+
+      const pdf = new jsPDF({
+        orientation: pdfHeightMm > pdfWidthMm ? "portrait" : "landscape",
+        unit: "mm",
+        format: [pdfWidthMm, pdfHeightMm + 10],
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      pdf.addImage(imgData, "PNG", 0, 5, pdfWidthMm, pdfHeightMm);
+      pdf.save(`quote-comparison-${Date.now()}.pdf`);
+
+      toast({ title: "PDF exported", description: "Comparison saved as PDF" });
+    } catch {
+      toast({
+        title: "Export failed",
+        description: "Could not generate PDF",
         variant: "destructive",
       });
     }
@@ -112,6 +150,10 @@ export function ComparisonActionBar({ captureRef }: ComparisonActionBarProps) {
       <Button onClick={handleCapture} variant="default" size="sm" disabled={!hasData}>
         <Camera className="h-4 w-4" />
         Capture as Image
+      </Button>
+      <Button onClick={handleExportPdf} variant="outline" size="sm" disabled={!hasData}>
+        <FileDown className="h-4 w-4" />
+        Export PDF
       </Button>
 
       {savedId ? (

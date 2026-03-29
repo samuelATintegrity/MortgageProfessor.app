@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type RefObject } from "react";
-import { toPng } from "html-to-image";
+import { toPng, toCanvas } from "html-to-image";
 import { Camera, FileDown, Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -38,8 +38,43 @@ export function RefiActionBar({ captureRef }: RefiActionBarProps) {
     }
   }
 
-  function handleExportPdf() {
-    toast({ title: "Coming soon", description: "PDF export is under development" });
+  async function handleExportPdf() {
+    if (!captureRef.current) return;
+    try {
+      toast({ title: "Generating PDF…", description: "Please wait" });
+
+      const canvas = await toCanvas(captureRef.current, {
+        quality: 1,
+        pixelRatio: 2,
+        backgroundColor: "#ffffff",
+      });
+
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+
+      const { jsPDF } = await import("jspdf");
+
+      const pdfWidthMm = 210;
+      const pdfHeightMm = (imgHeight / imgWidth) * pdfWidthMm;
+
+      const pdf = new jsPDF({
+        orientation: pdfHeightMm > pdfWidthMm ? "portrait" : "landscape",
+        unit: "mm",
+        format: [pdfWidthMm, pdfHeightMm + 10],
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      pdf.addImage(imgData, "PNG", 0, 5, pdfWidthMm, pdfHeightMm);
+      pdf.save(`refi-analysis-${Date.now()}.pdf`);
+
+      toast({ title: "PDF exported", description: "Refinance analysis saved as PDF" });
+    } catch {
+      toast({
+        title: "Export failed",
+        description: "Could not generate PDF",
+        variant: "destructive",
+      });
+    }
   }
 
   async function handleSaveAnalysis() {
