@@ -27,6 +27,7 @@ interface ComparisonState {
   updateRow: (id: string, partial: Partial<ComparisonRow>) => void;
   addRow: (category: ComparisonCategory, closingCostCategory?: ClosingCostSubcategory) => void;
   removeRow: (id: string) => void;
+  startBlank: () => void;
   importFromQuote: (quoteData: SavedQuoteData, tierIndex: number) => void;
   loadSavedComparison: (data: SavedComparisonData) => void;
   reset: () => void;
@@ -222,6 +223,36 @@ export const useComparisonStore = create<ComparisonState>((set, get) => ({
     set((state) => ({
       rows: state.rows.filter((r) => r.id !== id),
     })),
+
+  startBlank: () => {
+    const rows: ComparisonRow[] = [
+      // Loan Info
+      { id: crypto.randomUUID(), category: "loan_info", competitorLabel: "Loan Amount", userLabel: "Loan Amount", competitorValue: 0, userValue: 0, format: "currency" },
+      { id: crypto.randomUUID(), category: "loan_info", competitorLabel: "Property Value", userLabel: "Property Value", competitorValue: 0, userValue: 0, format: "currency" },
+      { id: crypto.randomUUID(), category: "loan_info", competitorLabel: "Interest Rate", userLabel: "Interest Rate", competitorValue: 0, userValue: 0, format: "percentage" },
+      { id: crypto.randomUUID(), category: "loan_info", competitorLabel: "Loan Term (Years)", userLabel: "Loan Term (Years)", competitorValue: 0, userValue: 0, format: "plain" },
+      // Closing Costs
+      { id: crypto.randomUUID(), category: "closing_costs", competitorLabel: "Appraisal Fee", userLabel: "Appraisal Fee", competitorValue: 0, userValue: 0, closingCostCategory: "lender_fees", format: "currency" },
+      { id: crypto.randomUUID(), category: "closing_costs", competitorLabel: "Processing Fee", userLabel: "Processing Fee", competitorValue: 0, userValue: 0, closingCostCategory: "lender_fees", format: "currency" },
+      { id: crypto.randomUUID(), category: "closing_costs", competitorLabel: "Underwriting Fee", userLabel: "Underwriting Fee", competitorValue: 0, userValue: 0, closingCostCategory: "lender_fees", format: "currency" },
+      { id: crypto.randomUUID(), category: "closing_costs", competitorLabel: "Title Fee", userLabel: "Title Fee", competitorValue: 0, userValue: 0, closingCostCategory: "title_fees", format: "currency" },
+      { id: crypto.randomUUID(), category: "closing_costs", competitorLabel: "Escrow Fee", userLabel: "Escrow Fee", competitorValue: 0, userValue: 0, closingCostCategory: "title_fees", format: "currency" },
+      { id: crypto.randomUUID(), category: "closing_costs", competitorLabel: "Prepaid Interest", userLabel: "Prepaid Interest", competitorValue: 0, userValue: 0, closingCostCategory: "prepaid", format: "currency" },
+      // Monthly Payment
+      { id: crypto.randomUUID(), category: "monthly_payment", competitorLabel: "Principal & Interest", userLabel: "Principal & Interest", competitorValue: 0, userValue: 0, format: "currency" },
+      { id: crypto.randomUUID(), category: "monthly_payment", competitorLabel: "Property Taxes", userLabel: "Property Taxes", competitorValue: 0, userValue: 0, format: "currency" },
+      { id: crypto.randomUUID(), category: "monthly_payment", competitorLabel: "Homeowner's Insurance", userLabel: "Homeowner's Insurance", competitorValue: 0, userValue: 0, format: "currency" },
+      { id: crypto.randomUUID(), category: "monthly_payment", competitorLabel: "Mortgage Insurance", userLabel: "Mortgage Insurance", competitorValue: 0, userValue: 0, format: "currency" },
+    ];
+    set({
+      competitorData: null,
+      competitorFileName: null,
+      lenderName: "",
+      rows,
+      parseError: null,
+      savedId: null,
+    });
+  },
 
   importFromQuote: (quoteData, tierIndex) => {
     const tier = quoteData.tiers[tierIndex];

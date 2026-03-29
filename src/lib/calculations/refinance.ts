@@ -30,6 +30,10 @@ export interface RefiInput {
   escrowRefundAmount: number; // refund from current escrow account
   currentPaymentIncludesEscrow: boolean; // whether current payment includes taxes/insurance
   skippedMonths: number; // 1 or 2 months skipped during refi
+
+  // Debt payoff (cash-out refi)
+  debtPayoffAmount: number; // amount of debt being paid off
+  debtMonthlyPayments: number; // current total monthly debt payments being eliminated
 }
 
 export interface AcceleratedPayoff {
@@ -37,6 +41,14 @@ export interface AcceleratedPayoff {
   monthsSaved: number;
   yearsSaved: number;
   interestSaved: number;
+}
+
+export interface DebtPayoffResult {
+  totalOldPayments: number; // old mortgage + old debt payments
+  monthlySavingsWithDebt: number; // totalOldPayments - newMortgage
+  acceleratedPayoffMonths: number; // months to pay off maintaining totalOldPayments
+  acceleratedPayoffYearsSaved: number;
+  acceleratedPayoffInterestSaved: number;
 }
 
 export interface RefiResult {
@@ -58,6 +70,9 @@ export interface RefiResult {
 
   // Accelerated payoff
   acceleratedPayoff: AcceleratedPayoff | null;
+
+  // Debt payoff
+  debtPayoff: DebtPayoffResult | null;
 
   // Additional benefits
   additionalBenefits: {
@@ -177,6 +192,55 @@ export function calculateRefinance(input: RefiInput): RefiResult {
     }
   }
 
+  // Debt payoff analysis
+  let debtPayoff: DebtPayoffResult | null = null;
+  if (input.debtMonthlyPayments > 0) {
+    const totalOldPayments = new Decimal(currentPayment)
+      .plus(input.debtMonthlyPayments)
+      .toDecimalPlaces(2)
+      .toNumber();
+    const monthlySavingsWithDebt = new Decimal(totalOldPayments)
+      .minus(newPayment)
+      .toDecimalPlaces(2)
+      .toNumber();
+
+    // Accelerated payoff: maintain totalOldPayments toward new mortgage
+    let debtAccelMonths = 0;
+    let debtAccelInterest = new Decimal(0);
+    const fullTermMonths = input.newTermYears * 12;
+
+    if (totalOldPayments > newPayment && newLoanAmt > 0) {
+      const monthlyRate = new Decimal(input.newRate).div(12);
+      let balance = new Decimal(newLoanAmt);
+      const debtAccelPayment = new Decimal(totalOldPayments);
+
+      while (balance.gt(0) && debtAccelMonths < fullTermMonths) {
+        const interest = balance.mul(monthlyRate).toDecimalPlaces(2);
+        debtAccelInterest = debtAccelInterest.plus(interest);
+        let principal = debtAccelPayment.minus(interest);
+        if (principal.gt(balance)) {
+          principal = balance;
+        }
+        balance = balance.minus(principal);
+        debtAccelMonths++;
+      }
+    }
+
+    const debtMonthsSaved = fullTermMonths - debtAccelMonths;
+    const debtAccelInterestSaved = new Decimal(newTotalInt)
+      .minus(debtAccelInterest)
+      .toDecimalPlaces(2)
+      .toNumber();
+
+    debtPayoff = {
+      totalOldPayments,
+      monthlySavingsWithDebt,
+      acceleratedPayoffMonths: debtAccelMonths,
+      acceleratedPayoffYearsSaved: parseFloat((debtMonthsSaved / 12).toFixed(1)),
+      acceleratedPayoffInterestSaved: debtAccelInterestSaved,
+    };
+  }
+
   // Additional benefits
   const skippedPaymentsValue = new Decimal(currentPayment).mul(input.skippedMonths ?? 2).toDecimalPlaces(2).toNumber();
   const escrowRefundValue = input.escrowRefundAmount ?? 0;
@@ -210,6 +274,7 @@ export function calculateRefinance(input: RefiInput): RefiResult {
     breakEvenMonths: breakEven,
     dailyInterestSaved: dailySaved,
     acceleratedPayoff,
+    debtPayoff,
     additionalBenefits: {
       skippedPaymentsValue,
       skippedMonths: input.skippedMonths ?? 2,

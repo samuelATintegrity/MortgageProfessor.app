@@ -8,6 +8,7 @@ export interface SectionVisibility {
   acceleratedPayoff: boolean;
   additionalBenefits: boolean;
   showSkippedPayments: boolean;
+  debtPayoff: boolean;
   summary: boolean;
 }
 
@@ -37,6 +38,8 @@ const defaultInput: Partial<RefiInput> = {
   escrowRefundAmount: 0,
   currentPaymentIncludesEscrow: true,
   skippedMonths: 2,
+  debtPayoffAmount: 0,
+  debtMonthlyPayments: 0,
 };
 
 const defaultVisibility: SectionVisibility = {
@@ -46,6 +49,7 @@ const defaultVisibility: SectionVisibility = {
   acceleratedPayoff: true,
   additionalBenefits: true,
   showSkippedPayments: true,
+  debtPayoff: true,
   summary: true,
 };
 

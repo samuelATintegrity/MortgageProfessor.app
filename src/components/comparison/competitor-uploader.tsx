@@ -7,7 +7,7 @@ import { useComparisonStore } from "@/stores/comparison-store";
 import { toast } from "@/hooks/use-toast";
 
 export function CompetitorUploader() {
-  const { competitorFileName, isProcessing, parseError, setProcessing, setParseError, setCompetitorData, reset } =
+  const { competitorFileName, isProcessing, parseError, setProcessing, setParseError, setCompetitorData, reset, startBlank } =
     useComparisonStore();
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -154,6 +154,20 @@ export function CompetitorUploader() {
           </>
         )}
       </div>
+
+      <div className="flex items-center gap-3">
+        <div className="h-px flex-1 bg-border" />
+        <span className="text-xs text-muted-foreground">or</span>
+        <div className="h-px flex-1 bg-border" />
+      </div>
+
+      <Button
+        variant="outline"
+        className="w-full"
+        onClick={() => startBlank()}
+      >
+        Enter Manually
+      </Button>
 
       <input
         ref={inputRef}

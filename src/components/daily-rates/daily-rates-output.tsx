@@ -132,7 +132,11 @@ export const DailyRatesOutput = forwardRef<HTMLDivElement>(
             {visibleRates.map((entry) => (
               <div
                 key={entry.label}
-                className="flex items-center justify-between bg-white/15 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/20"
+                className={`flex items-center justify-between px-4 py-3 ${
+                  input.showRateCardBg
+                    ? "bg-white/15 backdrop-blur-sm rounded-lg border border-white/20"
+                    : ""
+                }`}
               >
                 <span
                   className="font-medium text-base drop-shadow"

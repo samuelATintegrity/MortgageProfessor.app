@@ -20,6 +20,7 @@ export interface DailyRatesInput {
   backgroundPosition: number; // 0-100 for object-position vertical %
   overlayOpacity: number; // 0-1
   whiteOverlayOpacity: number; // 0-1
+  showRateCardBg: boolean;
   // Typography
   headlineFont: string;
   headlineFontSize: number; // px
@@ -91,6 +92,7 @@ const defaultInput: DailyRatesInput = {
   backgroundPosition: 50,
   overlayOpacity: 0.5,
   whiteOverlayOpacity: 0,
+  showRateCardBg: true,
   headlineFont: "Inter",
   headlineFontSize: 24,
   headlineColor: "#FFFFFF",
@@ -120,7 +122,7 @@ export const useDailyRatesStore = create<DailyRatesState>()(
     }),
     {
       name: "daily-rates-storage",
-      version: 3,
+      version: 4,
       migrate: (persisted: unknown) => {
         const old = persisted as { input?: Partial<DailyRatesInput> };
         return {

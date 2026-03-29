@@ -369,6 +369,18 @@ export function DailyRatesInputForm() {
               className="w-full"
             />
           </div>
+
+          {/* Rate card background toggle */}
+          <div className="flex items-center gap-2 pt-2 border-t">
+            <Switch
+              id="toggle-rate-card-bg"
+              checked={input.showRateCardBg}
+              onCheckedChange={(val) => setInput({ showRateCardBg: val })}
+            />
+            <Label htmlFor="toggle-rate-card-bg" className="cursor-pointer">
+              Show rate card backgrounds
+            </Label>
+          </div>
         </CardContent>
       </Card>
 

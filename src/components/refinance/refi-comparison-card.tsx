@@ -4,16 +4,6 @@ import { forwardRef } from "react";
 import { useRefiStore } from "@/stores/refi-store";
 import { useQuoteStore } from "@/stores/quote-store";
 import { Separator } from "@/components/ui/separator";
-import {
-  ArrowDown,
-  ArrowUp,
-  Clock,
-  DollarSign,
-  TrendingDown,
-  Lightbulb,
-  Zap,
-  Gift,
-} from "lucide-react";
 
 const fmt = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -25,10 +15,9 @@ function rateDisplay(rate: number): string {
   return (rate * 100).toFixed(3) + "%";
 }
 
-function SectionHeader({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
+function SectionHeader({ title }: { title: string }) {
   return (
-    <div className="flex items-center gap-2 mb-3">
-      <Icon className="h-4 w-4 text-gray-600" />
+    <div className="mb-3">
       <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">{title}</h3>
     </div>
   );
@@ -98,22 +87,20 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
         {/* Monthly Payment Comparison */}
         {sectionVisibility.monthlyPayment && (
           <>
-            <SectionHeader icon={DollarSign} title="Monthly Payment Comparison" />
+            <SectionHeader title="Monthly Payment Comparison" />
             <div className="space-y-2 mb-2">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
                 <span className="text-sm text-gray-500">Current Payment</span>
                 <span className="font-semibold">{fmt.format(result.currentMonthlyPayment)}</span>
               </div>
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
                 <span className="text-sm text-gray-500">New Payment</span>
                 <span className="font-semibold">{fmt.format(result.newMonthlyPayment)}</span>
               </div>
               <div className="flex justify-between items-center pt-2 border-t">
                 <span className="text-sm font-medium">Difference</span>
-                <span className={`font-semibold flex items-center gap-1 ${paymentSavings ? "text-emerald-600" : "text-red-600"}`}>
-                  {paymentSavings ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />}
+                <span className={`font-semibold ${paymentSavings ? "text-emerald-600" : "text-red-600"}`}>
                   {fmt.format(Math.abs(result.monthlyPaymentDifference))}
-                  <span className="text-xs ml-0.5">{paymentSavings ? "lower" : "higher"}</span>
                 </span>
               </div>
             </div>
@@ -124,9 +111,9 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
         {/* Interest Savings */}
         {sectionVisibility.interestSavings && (
           <>
-            <SectionHeader icon={TrendingDown} title="Interest Savings" />
+            <SectionHeader title="Interest Savings" />
             <div className="space-y-2 mb-2">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
                 <span className="text-sm text-gray-500">
                   Current Loan&apos;s Remaining Interest
                 </span>
@@ -134,7 +121,7 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
                   {fmt.format(result.currentRemainingInterest)}
                 </span>
               </div>
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
                 <span className="text-sm text-gray-500">
                   New Loan Total Interest
                 </span>
@@ -152,9 +139,6 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
                   }`}
                 >
                   {fmt.format(Math.abs(result.totalInterestSavings))}
-                  <span className="text-xs ml-1">
-                    {interestSavings ? "saved" : "more"}
-                  </span>
                 </span>
               </div>
             </div>
@@ -165,9 +149,9 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
         {/* Break-Even Analysis */}
         {sectionVisibility.breakEven && (
           <>
-            <SectionHeader icon={Clock} title="Break-Even Analysis" />
+            <SectionHeader title="Break-Even Analysis" />
             <div className="space-y-2 mb-2">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
                 <span className="text-sm text-gray-500">
                   Refinance Costs
                 </span>
@@ -175,7 +159,7 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
                   {fmt.format(input.closingCosts ?? 0)}
                 </span>
               </div>
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
                 <span className="text-sm text-gray-500">
                   Time to Recoup Fees
                 </span>
@@ -185,7 +169,7 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
                     : "N/A (payment increases)"}
                 </span>
               </div>
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
                 <span className="text-sm text-gray-500">
                   Daily Interest Saved
                 </span>
@@ -196,7 +180,7 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
                       : "text-red-600"
                   }`}
                 >
-                  {fmt.format(Math.abs(result.dailyInterestSaved))}/day
+                  {fmt.format(Math.abs(result.dailyInterestSaved))}
                 </span>
               </div>
             </div>
@@ -207,7 +191,7 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
         {/* Accelerated Payoff */}
         {sectionVisibility.acceleratedPayoff && result.acceleratedPayoff && (
           <>
-            <SectionHeader icon={Zap} title="Accelerated Payoff" />
+            <SectionHeader title="Accelerated Payoff" />
             <div className="space-y-2 mb-2">
               <p className="text-sm text-gray-500 leading-relaxed">
                 If you maintain your current payment of{" "}
@@ -221,15 +205,15 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
                     : `${result.acceleratedPayoff.termMonths} months`}
                 </span>.
               </p>
-              <div className="flex justify-between items-center pt-2 border-t">
+              <div className="flex justify-between items-center pt-2 border-t pb-2 border-b border-gray-100">
                 <span className="text-sm text-gray-500">
                   Time Saved
                 </span>
                 <span className="font-semibold text-emerald-600">
-                  {result.acceleratedPayoff.yearsSaved} years
+                  {result.acceleratedPayoff.yearsSaved.toFixed(1)} years
                 </span>
               </div>
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
                 <span className="text-sm text-gray-500">
                   Additional Interest Saved
                 </span>
@@ -242,13 +226,88 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
           </>
         )}
 
+        {/* Debt Payoff Analysis */}
+        {sectionVisibility.debtPayoff && result.debtPayoff && (
+          <>
+            <SectionHeader title="Debt Payoff Analysis" />
+            <div className="space-y-2 mb-2">
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                <span className="text-sm text-gray-500">
+                  Previous Total Monthly Payments
+                </span>
+                <span className="font-semibold">
+                  {fmt.format(result.debtPayoff.totalOldPayments)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                <span className="text-sm text-gray-500">
+                  New Mortgage Payment
+                </span>
+                <span className="font-semibold">
+                  {fmt.format(result.newMonthlyPayment)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t">
+                <span className="text-sm font-medium">
+                  Monthly Savings (with debt eliminated)
+                </span>
+                <span
+                  className={`text-lg font-bold ${
+                    result.debtPayoff.monthlySavingsWithDebt >= 0
+                      ? "text-emerald-600"
+                      : "text-red-600"
+                  }`}
+                >
+                  {fmt.format(Math.abs(result.debtPayoff.monthlySavingsWithDebt))}
+                </span>
+              </div>
+              {result.debtPayoff.acceleratedPayoffYearsSaved > 0 && (
+                <>
+                  <div className="pt-3">
+                    <p className="text-sm text-gray-500 leading-relaxed">
+                      If you maintain your previous total payments of{" "}
+                      <span className="font-semibold text-gray-900">
+                        {fmt.format(result.debtPayoff.totalOldPayments)}
+                      </span>{" "}
+                      toward the new mortgage, you&apos;d pay off in{" "}
+                      <span className="font-semibold text-gray-900">
+                        {Math.floor(result.debtPayoff.acceleratedPayoffMonths / 12)} years
+                        {result.debtPayoff.acceleratedPayoffMonths % 12 > 0
+                          ? ` ${result.debtPayoff.acceleratedPayoffMonths % 12} months`
+                          : ""}
+                      </span>.
+                    </p>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t pb-2 border-b border-gray-100">
+                    <span className="text-sm text-gray-500">
+                      Time Saved
+                    </span>
+                    <span className="font-semibold text-emerald-600">
+                      {result.debtPayoff.acceleratedPayoffYearsSaved.toFixed(1)} years
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                    <span className="text-sm text-gray-500">
+                      Additional Interest Saved
+                    </span>
+                    <span className="font-semibold text-emerald-600">
+                      {fmt.format(result.debtPayoff.acceleratedPayoffInterestSaved)}
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
+            <Separator className="my-4" />
+          </>
+        )}
+
         {/* Additional Benefits */}
         {sectionVisibility.additionalBenefits && (result.additionalBenefits.skippedPaymentsValue > 0 || result.additionalBenefits.escrowRefundValue > 0) && (
           <>
-            <SectionHeader icon={Gift} title="Additional Benefits" />
+            <SectionHeader title="Additional Benefits" />
             <div className="space-y-2 mb-2">
               {sectionVisibility.showSkippedPayments && (
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center pb-2 border-b border-gray-100">
                   <span className="text-sm text-gray-500">
                     Skipped Payments ({result.additionalBenefits.skippedMonths} month{result.additionalBenefits.skippedMonths > 1 ? "s" : ""})
                   </span>
@@ -258,7 +317,7 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
                 </div>
               )}
               {result.additionalBenefits.escrowRefundValue > 0 && (
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center pb-2 border-b border-gray-100">
                   <span className="text-sm text-gray-500">
                     Escrow Account Refund
                   </span>
@@ -274,15 +333,10 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
 
         {/* Summary */}
         {sectionVisibility.summary && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-            <div className="flex gap-3">
-              <div className="mt-0.5">
-                <Lightbulb className="h-5 w-5 text-emerald-600" />
-              </div>
-              <p className="text-sm leading-relaxed text-gray-900">
-                {result.summaryText}
-              </p>
-            </div>
+          <div className="pt-2">
+            <p className="text-sm leading-relaxed text-gray-700">
+              {result.summaryText}
+            </p>
           </div>
         )}
 

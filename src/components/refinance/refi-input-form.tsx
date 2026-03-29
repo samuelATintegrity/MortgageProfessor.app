@@ -253,6 +253,27 @@ export function RefiInputForm() {
         </CardContent>
       </Card>
 
+      {/* Debt Payoff */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Debt Payoff (Cash-Out Refi)</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <CurrencyInput
+            label="Debt Being Paid Off"
+            id="debtPayoffAmount"
+            value={input.debtPayoffAmount}
+            onChange={(val) => setInput({ debtPayoffAmount: val })}
+          />
+          <CurrencyInput
+            label="Monthly Debt Payments Eliminated"
+            id="debtMonthlyPayments"
+            value={input.debtMonthlyPayments}
+            onChange={(val) => setInput({ debtMonthlyPayments: val })}
+          />
+        </CardContent>
+      </Card>
+
       {/* Additional Benefits */}
       <Card>
         <CardHeader className="pb-3">
@@ -305,6 +326,7 @@ export function RefiInputForm() {
             { key: "acceleratedPayoff" as const, label: "Accelerated Payoff" },
             { key: "additionalBenefits" as const, label: "Additional Benefits" },
             { key: "showSkippedPayments" as const, label: "Show Skipped Payments" },
+            { key: "debtPayoff" as const, label: "Debt Payoff Analysis" },
             { key: "summary" as const, label: "Summary" },
           ]).map(({ key, label }) => (
             <div key={key} className="flex items-center justify-between">
