@@ -47,6 +47,11 @@ export const DailyRatesOutput = forwardRef<HTMLDivElement>(
 
     const visibleRates = rates.filter((r) => r.show);
 
+    // Scale down for shorter/wider aspect ratios (IG Post 1:1, X Post ~16:9)
+    const aspectRatio = input.outputHeight / input.outputWidth;
+    const isCompact = aspectRatio <= 1.2; // 1:1 or wider
+    const isVeryCompact = aspectRatio <= 0.7; // X Post-style landscape
+
     return (
       <div
         ref={ref}
@@ -83,49 +88,52 @@ export const DailyRatesOutput = forwardRef<HTMLDivElement>(
         )}
 
         {/* Branding — positioned at top, does not affect centering */}
-        <div className="absolute inset-x-0 top-0 p-[5%] text-center z-10">
+        <div className={`absolute inset-x-0 top-0 text-center z-10 ${isVeryCompact ? "p-[2%]" : isCompact ? "p-[3%]" : "p-[5%]"}`}>
           {brandingImageUrl && (
-            <div className="flex justify-center mb-2">
+            <div className={`flex justify-center ${isCompact ? "mb-1" : "mb-2"}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={brandingImageUrl}
                 alt="Branding"
                 className="max-h-[8%] w-auto object-contain drop-shadow-lg"
-                style={{ maxHeight: "60px" }}
+                style={{ maxHeight: isVeryCompact ? "30px" : isCompact ? "40px" : "60px" }}
                 crossOrigin="anonymous"
               />
             </div>
           )}
           {brandingToggles.showName && profile.fullName && (
-            <p className="text-lg font-bold drop-shadow-lg" style={{ color: input.headlineColor }}>
+            <p className={`font-bold drop-shadow-lg ${isVeryCompact ? "text-xs" : isCompact ? "text-sm" : "text-lg"}`} style={{ color: input.headlineColor }}>
               {profile.fullName}
             </p>
           )}
           {brandingToggles.showCompany && profile.companyName && (
-            <p className="text-sm drop-shadow-lg" style={{ color: input.headlineColor, opacity: 0.9 }}>
+            <p className={`drop-shadow-lg ${isVeryCompact ? "text-[10px]" : isCompact ? "text-xs" : "text-sm"}`} style={{ color: input.headlineColor, opacity: 0.9 }}>
               {profile.companyName}
             </p>
           )}
           {brandingToggles.showNmls && profile.nmlsNumber && (
-            <p className="text-xs drop-shadow-lg" style={{ color: input.headlineColor, opacity: 0.7 }}>
+            <p className={`drop-shadow-lg ${isVeryCompact ? "text-[8px]" : isCompact ? "text-[10px]" : "text-xs"}`} style={{ color: input.headlineColor, opacity: 0.7 }}>
               NMLS# {profile.nmlsNumber}
             </p>
           )}
         </div>
 
         {/* Center: Rates — true centered in the image */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-[5%] z-10">
+        <div className={`absolute inset-0 flex flex-col items-center justify-center z-10 ${isVeryCompact ? "p-[3%]" : isCompact ? "p-[4%]" : "p-[5%]"}`}>
           {/* Date */}
-          <p className="text-center text-sm mb-4 drop-shadow-lg" style={{ color: input.headlineColor, opacity: 0.8 }}>
+          <p
+            className={`text-center drop-shadow-lg ${isVeryCompact ? "text-[10px] mb-1" : isCompact ? "text-xs mb-2" : "text-sm mb-4"}`}
+            style={{ color: input.headlineColor, opacity: 0.8 }}
+          >
             {formatDate(input.date)}
           </p>
 
           {/* Title */}
           <h2
-            className="text-center font-bold mb-4 drop-shadow-lg"
+            className={`text-center font-bold drop-shadow-lg ${isVeryCompact ? "mb-2" : isCompact ? "mb-3" : "mb-4"}`}
             style={{
               fontFamily: input.headlineFont !== "Inter" ? input.headlineFont : undefined,
-              fontSize: `${input.headlineFontSize}px`,
+              fontSize: `${isVeryCompact ? Math.round(input.headlineFontSize * 0.6) : isCompact ? Math.round(input.headlineFontSize * 0.75) : input.headlineFontSize}px`,
               color: input.headlineColor,
             }}
           >
@@ -133,24 +141,40 @@ export const DailyRatesOutput = forwardRef<HTMLDivElement>(
           </h2>
 
           {/* Rate Cards */}
-          <div className="space-y-2 w-full">
+          <div className={`w-full ${isVeryCompact ? "space-y-1" : isCompact ? "space-y-1.5" : "space-y-2"}`}>
             {visibleRates.map((entry) => (
               <div
                 key={entry.label}
-                className={`flex items-center justify-between px-4 py-3 ${
+                className={`${
+                  input.rateCardLayout === "center"
+                    ? `grid grid-cols-2 ${isVeryCompact ? "px-2 py-1" : isCompact ? "px-3 py-1.5" : "px-4 py-3"}`
+                    : `flex items-center justify-between ${isVeryCompact ? "px-2 py-1" : isCompact ? "px-3 py-1.5" : "px-4 py-3"}`
+                } ${
                   input.showRateCardBg
                     ? "bg-white/15 backdrop-blur-sm rounded-lg border border-white/20"
                     : ""
                 }`}
               >
                 <span
-                  className="font-medium text-base drop-shadow"
+                  className={`font-medium drop-shadow ${
+                    isVeryCompact ? "text-xs" : isCompact ? "text-sm" : "text-base"
+                  } ${
+                    input.rateCardLayout === "center"
+                      ? "text-right pr-3 border-r border-white/30 self-center"
+                      : ""
+                  }`}
                   style={{ color: input.rateTextColor }}
                 >
                   {entry.label}
                 </span>
                 <span
-                  className="font-bold text-xl drop-shadow"
+                  className={`font-bold drop-shadow ${
+                    isVeryCompact ? "text-sm" : isCompact ? "text-base" : "text-xl"
+                  } ${
+                    input.rateCardLayout === "center"
+                      ? "text-left pl-3 self-center"
+                      : ""
+                  }`}
                   style={{ color: input.rateTextColor }}
                 >
                   {formatRate(entry.rate)}

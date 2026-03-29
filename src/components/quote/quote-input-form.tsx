@@ -134,6 +134,7 @@ export function QuoteInputForm() {
   const itemizeMode = input.itemizeMode ?? false;
   const buydownType = input.buydownType ?? "none";
   const isStreamline = input.isStreamline ?? false;
+  const rollClosingCostsIn = input.rollClosingCostsIn ?? false;
 
   // Compute financed fee for display
   const baseLoanAmount = input.loanAmount ?? 0;
@@ -170,6 +171,7 @@ export function QuoteInputForm() {
                 // Reset streamline when switching to purchase
                 if (newType === "purchase") {
                   updates.isStreamline = false;
+                  updates.rollClosingCostsIn = false;
                 }
                 setInput(updates as Partial<typeof input>);
               }}
@@ -207,6 +209,19 @@ export function QuoteInputForm() {
                 }}
               >
                 {isStreamline ? "✓ Streamline Refinance" : "Streamline Refinance"}
+              </button>
+            )}
+            {isRefinance && (
+              <button
+                type="button"
+                className={`mt-1.5 px-3 py-1 text-xs rounded-full border transition-colors ${
+                  rollClosingCostsIn
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-600 border-gray-300 hover:bg-gray-100"
+                }`}
+                onClick={() => setInput({ rollClosingCostsIn: !rollClosingCostsIn })}
+              >
+                {rollClosingCostsIn ? "✓ Roll Costs In" : "Roll Costs In"}
               </button>
             )}
           </div>

@@ -158,10 +158,17 @@ export function RefiInputForm() {
             />
 
             <CurrencyInput
-              label="Loan Costs"
+              label="Lender Costs"
               id="closingCosts"
               value={input.closingCosts}
               onChange={(val) => setInput({ closingCosts: val })}
+            />
+
+            <CurrencyInput
+              label="Escrow Setup Costs"
+              id="escrowSetupCosts"
+              value={input.escrowSetupCosts}
+              onChange={(val) => setInput({ escrowSetupCosts: val })}
             />
 
             <PercentageInput
@@ -327,7 +334,6 @@ export function RefiInputForm() {
             { key: "additionalBenefits" as const, label: "Additional Benefits" },
             { key: "showSkippedPayments" as const, label: "Show Skipped Payments" },
             { key: "debtPayoff" as const, label: "Debt Payoff Analysis" },
-            { key: "summary" as const, label: "Summary" },
           ]).map(({ key, label }) => (
             <div key={key} className="flex items-center justify-between">
               <Label htmlFor={`toggle-${key}`} className="text-sm cursor-pointer">

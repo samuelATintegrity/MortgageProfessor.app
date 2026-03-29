@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { ColorPicker } from "@/components/ui/color-picker";
-import { Upload, X } from "lucide-react";
+import { Upload, X, AlignHorizontalDistributeCenter, AlignHorizontalSpaceAround } from "lucide-react";
 
 function RateRow({
   label,
@@ -399,6 +399,31 @@ export function DailyRatesInputForm() {
             <Label htmlFor="toggle-rate-card-bg" className="cursor-pointer">
               Show rate card backgrounds
             </Label>
+          </div>
+
+          {/* Rate card layout */}
+          <div className="space-y-1 pt-2 border-t">
+            <Label>Rate Card Layout</Label>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant={input.rateCardLayout === "sides" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setInput({ rateCardLayout: "sides" })}
+              >
+                <AlignHorizontalSpaceAround className="h-4 w-4 mr-1" />
+                Sides
+              </Button>
+              <Button
+                type="button"
+                variant={input.rateCardLayout === "center" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setInput({ rateCardLayout: "center" })}
+              >
+                <AlignHorizontalDistributeCenter className="h-4 w-4 mr-1" />
+                Center
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

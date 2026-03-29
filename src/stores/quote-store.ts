@@ -68,6 +68,7 @@ const defaultInput: Partial<QuoteInput> = {
   piOnlyMode: false,
   isStreamline: false,
   itemizeMode: false,
+  rollClosingCostsIn: false,
   tiers: [
     {
       id: "tier1",

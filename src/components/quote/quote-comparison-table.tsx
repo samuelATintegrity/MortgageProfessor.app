@@ -348,7 +348,17 @@ export const QuoteComparisonTable = forwardRef<
 
       {/* Loan Summary */}
       <div className="flex flex-wrap gap-x-6 gap-y-1 justify-center text-sm mb-3">
-        {result.financedFeeAmount > 0 ? (
+        {result.rollClosingCostsIn && visibleTiers.length > 0 && visibleTiers[0].closingCostsRolledIn > 0 ? (
+          <>
+            <span>
+              <span className="text-gray-500">Base Loan Amount:</span>{" "}
+              <span className="font-medium">{fmt.format(result.baseLoanAmount)}</span>
+            </span>
+            <span>
+              <span className="text-gray-500">Closing Costs: Rolled In</span>
+            </span>
+          </>
+        ) : result.financedFeeAmount > 0 ? (
           <>
             <span>
               <span className="text-gray-500">Base Loan Amount:</span>{" "}

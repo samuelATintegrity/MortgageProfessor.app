@@ -59,6 +59,7 @@ export interface QuoteInput {
   piOnlyMode: boolean;
   isStreamline: boolean;
   itemizeMode: boolean;
+  rollClosingCostsIn: boolean;
 }
 
 export interface TierResult {
@@ -82,6 +83,9 @@ export interface TierResult {
   monthlyMI: number;
   totalMonthlyPayment: number;
   buydownYears: BuydownYearResult[];
+  // Roll costs in (refinance only)
+  rolledInLoanAmount: number;
+  closingCostsRolledIn: number;
   // Itemized breakdowns
   itemized: {
     prepaidInterest: number;
@@ -114,6 +118,7 @@ export interface QuoteResult {
   itemizeMode: boolean;
   buydownType: BuydownType;
   transactionType: "purchase" | "refinance";
+  rollClosingCostsIn: boolean;
 }
 
 function calculateTier(
@@ -193,9 +198,8 @@ function calculateTier(
   const effectiveSellerCredit = isRefinance ? 0 : input.sellerCredit;
   const effectivePrepaidCosts = input.piOnlyMode ? 0 : prepaidCosts;
 
-  // Total cash at closing
-  const totalCash = new Decimal(effectiveDownPayment)
-    .plus(pointsBuydown)
+  // Total cash at closing (before roll-in)
+  const closingCostsTotal = new Decimal(pointsBuydown)
     .plus(titleFees)
     .plus(effectivePrepaidCosts)
     .plus(lenderFees)
@@ -204,10 +208,28 @@ function calculateTier(
     .toDecimalPlaces(2)
     .toNumber();
 
+  const totalCashBeforeRollIn = new Decimal(effectiveDownPayment)
+    .plus(closingCostsTotal)
+    .toDecimalPlaces(2)
+    .toNumber();
+
+  // Roll closing costs into loan (refinance only)
+  let finalPI = pi;
+  let rolledInLoanAmount = 0;
+  let closingCostsRolledIn = 0;
+  let totalCash = totalCashBeforeRollIn;
+
+  if (isRefinance && input.rollClosingCostsIn && closingCostsTotal > 0) {
+    closingCostsRolledIn = closingCostsTotal;
+    rolledInLoanAmount = new Decimal(totalLoanAmount).plus(closingCostsRolledIn).toDecimalPlaces(2).toNumber();
+    finalPI = monthlyPayment(rolledInLoanAmount, tierConfig.rate, input.loanTermYears);
+    totalCash = 0;
+  }
+
   // Total monthly payment
   const effectiveEscrow = input.piOnlyMode ? 0 : monthlyEscrow;
   const effectiveMI = input.piOnlyMode ? 0 : input.mortgageInsuranceMonthly;
-  const totalMonthly = new Decimal(pi)
+  const totalMonthly = new Decimal(finalPI)
     .plus(effectiveEscrow)
     .plus(effectiveMI)
     .toDecimalPlaces(2)
@@ -219,7 +241,7 @@ function calculateTier(
     color: tierConfig.color,
     visible: tierConfig.visible,
     interestRate: tierConfig.rate,
-    monthlyPI: pi,
+    monthlyPI: finalPI,
     pointsBuydown,
     isLenderCredit,
     titleFees,
@@ -234,6 +256,8 @@ function calculateTier(
     monthlyMI: effectiveMI,
     totalMonthlyPayment: totalMonthly,
     buydownYears,
+    rolledInLoanAmount,
+    closingCostsRolledIn,
     itemized: {
       prepaidInterest: prepaid,
       prepaidTaxes: prepaidTaxes.toDecimalPlaces(2).toNumber(),
@@ -314,5 +338,6 @@ export function calculateQuote(input: QuoteInput): QuoteResult {
     itemizeMode: input.itemizeMode,
     buydownType: input.buydownType,
     transactionType: input.transactionType,
+    rollClosingCostsIn: input.rollClosingCostsIn ?? false,
   };
 }

@@ -64,13 +64,13 @@ export default function NewDailyRatesPage() {
 
       {/* Two-panel layout */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-        {/* Left: Input Form */}
-        <div>
+        {/* Left: Input Form — scrollable on xl so output stays visible */}
+        <div className="xl:max-h-[calc(100vh-10rem)] xl:overflow-y-auto xl:pr-2">
           <DailyRatesInputForm />
         </div>
 
-        {/* Right: Output */}
-        <div className="space-y-4">
+        {/* Right: Output — sticky on xl */}
+        <div className="space-y-4 xl:sticky xl:top-24">
           <DailyRatesActionBar captureRef={captureRef} />
 
           {/* Preview — scaled down, max width ~360px to keep it manageable */}

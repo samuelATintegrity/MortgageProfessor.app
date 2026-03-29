@@ -4,6 +4,7 @@ import { useRef, useEffect } from "react";
 import { RefiInputForm } from "@/components/refinance/refi-input-form";
 import { RefiComparisonCard } from "@/components/refinance/refi-comparison-card";
 import { RefiActionBar } from "@/components/refinance/refi-action-bar";
+import { RefiFormatToolbar } from "@/components/refinance/refi-format-toolbar";
 import { useRefiStore } from "@/stores/refi-store";
 import { useQuoteStore } from "@/stores/quote-store";
 import { createClient } from "@/lib/supabase/client";
@@ -64,6 +65,7 @@ export default function NewRefinanceAnalysisPage() {
         {/* Right: Output */}
         <div className="space-y-4">
           <RefiActionBar captureRef={captureRef} />
+          <RefiFormatToolbar />
 
           {/* Capture wrapper with white bg for clean image output */}
           <div className="rounded-lg border bg-white shadow-sm">

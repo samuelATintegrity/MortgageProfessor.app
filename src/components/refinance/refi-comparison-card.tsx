@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef } from "react";
-import { useRefiStore } from "@/stores/refi-store";
+import { useRefiStore, type RowFormatting } from "@/stores/refi-store";
 import { useQuoteStore } from "@/stores/quote-store";
 import { Separator } from "@/components/ui/separator";
 
@@ -23,12 +23,28 @@ function SectionHeader({ title }: { title: string }) {
   );
 }
 
-/** Standard row: label on left, value on right, with bottom border */
-function Row({ label, value, valueClass }: { label: string; value: string; valueClass?: string }) {
+/** Standard row: label on left, value on right, with bottom border and optional formatting */
+function Row({ label, value, rowKey, formatting, onRowClick }: {
+  label: string;
+  value: string;
+  rowKey?: string;
+  formatting?: RowFormatting;
+  onRowClick?: (key: string) => void;
+}) {
+  const style: React.CSSProperties = {};
+  if (formatting?.highlight) style.backgroundColor = "#fef08a";
+  if (formatting?.bold) style.fontWeight = "bold";
+  if (formatting?.underline) style.textDecoration = "underline";
+  if (formatting?.color) style.color = formatting.color;
+
   return (
-    <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-      <span className="text-sm text-gray-500">{label}</span>
-      <span className={`text-sm text-gray-500 ${valueClass ?? ""}`}>{value}</span>
+    <div
+      className={`flex justify-between items-center pb-2 border-b border-gray-100 ${rowKey ? "cursor-pointer hover:bg-gray-50" : ""}`}
+      style={formatting?.highlight ? { backgroundColor: "#fef08a" } : undefined}
+      onClick={rowKey && onRowClick ? () => onRowClick(rowKey) : undefined}
+    >
+      <span className="text-sm text-gray-500" style={formatting?.bold || formatting?.underline || formatting?.color ? style : undefined}>{label}</span>
+      <span className="text-sm text-gray-500" style={formatting?.bold || formatting?.underline || formatting?.color ? style : undefined}>{value}</span>
     </div>
   );
 }
@@ -38,7 +54,11 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
     const result = useRefiStore((s) => s.result);
     const input = useRefiStore((s) => s.input);
     const sectionVisibility = useRefiStore((s) => s.sectionVisibility);
+    const formatting = useRefiStore((s) => s.formatting);
+    const setActiveFormatRow = useRefiStore((s) => s.setActiveFormatRow);
     const { brandingImageUrl, profile, brandingToggles } = useQuoteStore();
+
+    const handleRowClick = (key: string) => setActiveFormatRow(key);
 
     if (!result) {
       return (
@@ -49,9 +69,6 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
         </div>
       );
     }
-
-    const paymentSavings = result.monthlyPaymentDifference >= 0;
-    const interestSavings = result.totalInterestSavings >= 0;
 
     return (
       <div ref={ref} className="bg-white text-gray-900 p-6 rounded-lg">
@@ -99,13 +116,9 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
           <>
             <SectionHeader title="Monthly Payment Comparison" />
             <div className="space-y-2 mb-2">
-              <Row label="Current Payment" value={fmt.format(result.currentMonthlyPayment)} />
-              <Row label="New Payment" value={fmt.format(result.newMonthlyPayment)} />
-              <Row
-                label="Difference"
-                value={fmt.format(Math.abs(result.monthlyPaymentDifference))}
-                valueClass={`font-semibold ${paymentSavings ? "!text-emerald-600" : "!text-red-600"}`}
-              />
+              <Row label="Current Payment" value={fmt.format(result.currentMonthlyPayment)} rowKey="currentPayment" formatting={formatting["currentPayment"]} onRowClick={handleRowClick} />
+              <Row label="New Payment" value={fmt.format(result.newMonthlyPayment)} rowKey="newPayment" formatting={formatting["newPayment"]} onRowClick={handleRowClick} />
+              <Row label="Difference" value={fmt.format(Math.abs(result.monthlyPaymentDifference))} rowKey="difference" formatting={formatting["difference"]} onRowClick={handleRowClick} />
             </div>
             <Separator className="my-4" />
           </>
@@ -116,13 +129,9 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
           <>
             <SectionHeader title="Interest Savings" />
             <div className="space-y-2 mb-2">
-              <Row label="Current Loan's Remaining Interest" value={fmt.format(result.currentRemainingInterest)} />
-              <Row label="New Loan Total Interest" value={fmt.format(result.newTotalInterest)} />
-              <Row
-                label="Total Interest Savings"
-                value={fmt.format(Math.abs(result.totalInterestSavings))}
-                valueClass={`font-semibold ${interestSavings ? "!text-emerald-600" : "!text-red-600"}`}
-              />
+              <Row label="Current Loan's Remaining Interest" value={fmt.format(result.currentRemainingInterest)} rowKey="remainingInterest" formatting={formatting["remainingInterest"]} onRowClick={handleRowClick} />
+              <Row label="New Loan Total Interest" value={fmt.format(result.newTotalInterest)} rowKey="newTotalInterest" formatting={formatting["newTotalInterest"]} onRowClick={handleRowClick} />
+              <Row label="Total Interest Savings" value={fmt.format(Math.abs(result.totalInterestSavings))} rowKey="totalInterestSavings" formatting={formatting["totalInterestSavings"]} onRowClick={handleRowClick} />
             </div>
             <Separator className="my-4" />
           </>
@@ -133,16 +142,15 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
           <>
             <SectionHeader title="Break-Even Analysis" />
             <div className="space-y-2 mb-2">
-              <Row label="Refinance Costs" value={fmt.format(input.closingCosts ?? 0)} />
-              <Row
-                label="Time to Recoup Fees"
-                value={result.breakEvenMonths >= 0 ? `${result.breakEvenMonths} months` : "N/A (payment increases)"}
-              />
-              <Row
-                label="Daily Interest Saved"
-                value={fmt.format(Math.abs(result.dailyInterestSaved))}
-                valueClass={`font-semibold ${result.dailyInterestSaved >= 0 ? "!text-emerald-600" : "!text-red-600"}`}
-              />
+              <Row label="Lender Costs" value={fmt.format(result.lenderCosts)} rowKey="lenderCosts" formatting={formatting["lenderCosts"]} onRowClick={handleRowClick} />
+              {result.escrowSetupCosts > 0 && (
+                <Row label="Escrow Costs" value={fmt.format(result.escrowSetupCosts)} rowKey="escrowCosts" formatting={formatting["escrowCosts"]} onRowClick={handleRowClick} />
+              )}
+              {result.escrowSetupCosts > 0 && (
+                <Row label="Total Closing Costs" value={fmt.format(result.totalClosingCosts)} rowKey="totalClosingCosts" formatting={formatting["totalClosingCosts"]} onRowClick={handleRowClick} />
+              )}
+              <Row label="Time to Recoup Fees" value={result.breakEvenMonths >= 0 ? `${result.breakEvenMonths} months` : "N/A (payment increases)"} rowKey="breakEven" formatting={formatting["breakEven"]} onRowClick={handleRowClick} />
+              <Row label="Daily Interest Saved" value={fmt.format(Math.abs(result.dailyInterestSaved))} rowKey="dailyInterest" formatting={formatting["dailyInterest"]} onRowClick={handleRowClick} />
             </div>
             <Separator className="my-4" />
           </>
@@ -165,16 +173,8 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
                     : `${result.acceleratedPayoff.termMonths} months`}
                 </span>.
               </p>
-              <Row
-                label="Time Saved"
-                value={`${result.acceleratedPayoff.yearsSaved.toFixed(1)} years`}
-                valueClass="font-semibold !text-emerald-600"
-              />
-              <Row
-                label="Additional Interest Saved"
-                value={fmt.format(result.acceleratedPayoff.interestSaved)}
-                valueClass="font-semibold !text-emerald-600"
-              />
+              <Row label="Time Saved" value={`${result.acceleratedPayoff.yearsSaved.toFixed(1)} years`} rowKey="accelTimeSaved" formatting={formatting["accelTimeSaved"]} onRowClick={handleRowClick} />
+              <Row label="Additional Interest Saved" value={fmt.format(result.acceleratedPayoff.interestSaved)} rowKey="accelInterestSaved" formatting={formatting["accelInterestSaved"]} onRowClick={handleRowClick} />
             </div>
             <Separator className="my-4" />
           </>
@@ -185,13 +185,9 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
           <>
             <SectionHeader title="Debt Payoff Analysis" />
             <div className="space-y-2 mb-2">
-              <Row label="Previous Total Monthly Payments" value={fmt.format(result.debtPayoff.totalOldPayments)} />
-              <Row label="New Mortgage Payment" value={fmt.format(result.newMonthlyPayment)} />
-              <Row
-                label="Monthly Savings (with debt eliminated)"
-                value={fmt.format(Math.abs(result.debtPayoff.monthlySavingsWithDebt))}
-                valueClass={`font-semibold ${result.debtPayoff.monthlySavingsWithDebt >= 0 ? "!text-emerald-600" : "!text-red-600"}`}
-              />
+              <Row label="Previous Total Monthly Payments" value={fmt.format(result.debtPayoff.totalOldPayments)} rowKey="debtOldPayments" formatting={formatting["debtOldPayments"]} onRowClick={handleRowClick} />
+              <Row label="New Mortgage Payment" value={fmt.format(result.newMonthlyPayment)} rowKey="debtNewPayment" formatting={formatting["debtNewPayment"]} onRowClick={handleRowClick} />
+              <Row label="Monthly Savings (with debt eliminated)" value={fmt.format(Math.abs(result.debtPayoff.monthlySavingsWithDebt))} rowKey="debtMonthlySavings" formatting={formatting["debtMonthlySavings"]} onRowClick={handleRowClick} />
               {result.debtPayoff.acceleratedPayoffYearsSaved > 0 && (
                 <>
                   <div className="pt-3">
@@ -209,16 +205,8 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
                       </span>.
                     </p>
                   </div>
-                  <Row
-                    label="Time Saved"
-                    value={`${result.debtPayoff.acceleratedPayoffYearsSaved.toFixed(1)} years`}
-                    valueClass="font-semibold !text-emerald-600"
-                  />
-                  <Row
-                    label="Additional Interest Saved"
-                    value={fmt.format(result.debtPayoff.acceleratedPayoffInterestSaved)}
-                    valueClass="font-semibold !text-emerald-600"
-                  />
+                  <Row label="Time Saved" value={`${result.debtPayoff.acceleratedPayoffYearsSaved.toFixed(1)} years`} rowKey="debtTimeSaved" formatting={formatting["debtTimeSaved"]} onRowClick={handleRowClick} />
+                  <Row label="Additional Interest Saved" value={fmt.format(result.debtPayoff.acceleratedPayoffInterestSaved)} rowKey="debtInterestSaved" formatting={formatting["debtInterestSaved"]} onRowClick={handleRowClick} />
                 </>
               )}
             </div>
@@ -232,31 +220,14 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
             <SectionHeader title="Additional Benefits" />
             <div className="space-y-2 mb-2">
               {sectionVisibility.showSkippedPayments && (
-                <Row
-                  label={`Skipped Payments (${result.additionalBenefits.skippedMonths} month${result.additionalBenefits.skippedMonths > 1 ? "s" : ""})`}
-                  value={fmt.format(result.additionalBenefits.skippedPaymentsValue)}
-                  valueClass="font-semibold !text-emerald-600"
-                />
+                <Row label={`Skipped Payments (${result.additionalBenefits.skippedMonths} month${result.additionalBenefits.skippedMonths > 1 ? "s" : ""})`} value={fmt.format(result.additionalBenefits.skippedPaymentsValue)} rowKey="skippedPayments" formatting={formatting["skippedPayments"]} onRowClick={handleRowClick} />
               )}
               {result.additionalBenefits.escrowRefundValue > 0 && (
-                <Row
-                  label="Escrow Account Refund"
-                  value={fmt.format(result.additionalBenefits.escrowRefundValue)}
-                  valueClass="font-semibold !text-emerald-600"
-                />
+                <Row label="Escrow Account Refund" value={fmt.format(result.additionalBenefits.escrowRefundValue)} rowKey="escrowRefund" formatting={formatting["escrowRefund"]} onRowClick={handleRowClick} />
               )}
             </div>
             <Separator className="my-4" />
           </>
-        )}
-
-        {/* Summary */}
-        {sectionVisibility.summary && (
-          <div className="pt-2">
-            <p className="text-sm leading-relaxed text-gray-700">
-              {result.summaryText}
-            </p>
-          </div>
         )}
 
         {/* Disclaimer */}

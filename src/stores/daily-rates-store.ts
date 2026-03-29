@@ -22,6 +22,7 @@ export interface DailyRatesInput {
   whiteOverlayOpacity: number; // 0-1
   showRateCardBg: boolean;
   blurIntensity: number; // 0-20 px
+  rateCardLayout: "sides" | "center";
   // Typography
   headlineFont: string;
   headlineFontSize: number; // px
@@ -63,12 +64,21 @@ export const BACKGROUNDS_BY_DIMENSION: Record<string, string[]> = {
     "/images/backgrounds/nature-4.svg",
     "/images/backgrounds/nature-5.svg",
   ],
-  // Dimension-specific backgrounds will be added here as images are created:
-  // "1080x1920": ["/images/backgrounds/ig-story/..."],
-  // "1080x1080": ["/images/backgrounds/ig-post/..."],
-  // "820x312":   ["/images/backgrounds/fb-cover/..."],
-  // "1200x675":  ["/images/backgrounds/x-post/..."],
-  // "1000x1500": ["/images/backgrounds/pinterest/..."],
+  "1080x1920": [
+    "/images/backgrounds/1080x1920 White Home 1.png",
+    "/images/backgrounds/1080x1920 White Home 2.png",
+    "/images/backgrounds/1080x1920 White Home 3.png",
+    "/images/backgrounds/1080x1920 Aerial Coastline 1.png",
+    "/images/backgrounds/1080x1920 Aerial Coastline 2.png",
+    "/images/backgrounds/1080x1920 Aerial Coastline 3.png",
+    "/images/backgrounds/1080x1920 Southern UT 1.png",
+    "/images/backgrounds/1080x1920 Southern UT 2.png",
+    "/images/backgrounds/1080x1920 Southern UT 3.png",
+    "/images/backgrounds/1080x1920 Mountains 1.png",
+    "/images/backgrounds/1080x1920 Mountains 2.png",
+    "/images/backgrounds/1080x1920 Road.png",
+    "/images/backgrounds/1080x1920 Townohmes.png",
+  ],
 };
 
 /** Get backgrounds for a given dimension, falling back to "all" */
@@ -91,7 +101,6 @@ export function getBackgroundsForDimension(w: number, h: number): string[] {
 export const DIMENSION_PRESETS = [
   { label: "IG Story", w: 1080, h: 1920 },
   { label: "IG Post", w: 1080, h: 1080 },
-  { label: "FB Cover", w: 820, h: 312 },
   { label: "X Post", w: 1200, h: 675 },
   { label: "Pinterest", w: 1000, h: 1500 },
 ];
@@ -130,6 +139,7 @@ const defaultInput: DailyRatesInput = {
   whiteOverlayOpacity: 0,
   showRateCardBg: true,
   blurIntensity: 0,
+  rateCardLayout: "sides",
   headlineFont: "Inter",
   headlineFontSize: 24,
   headlineColor: "#FFFFFF",
@@ -159,7 +169,7 @@ export const useDailyRatesStore = create<DailyRatesState>()(
     }),
     {
       name: "daily-rates-storage",
-      version: 5,
+      version: 6,
       migrate: (persisted: unknown) => {
         const old = persisted as { input?: Partial<DailyRatesInput> };
         return {

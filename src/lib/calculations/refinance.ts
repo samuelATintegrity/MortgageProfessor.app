@@ -34,6 +34,9 @@ export interface RefiInput {
   // Debt payoff (cash-out refi)
   debtPayoffAmount: number; // amount of debt being paid off
   debtMonthlyPayments: number; // current total monthly debt payments being eliminated
+
+  // Escrow setup
+  escrowSetupCosts: number; // prepaid escrow for new loan (taxes, insurance, etc.)
 }
 
 export interface AcceleratedPayoff {
@@ -74,15 +77,17 @@ export interface RefiResult {
   // Debt payoff
   debtPayoff: DebtPayoffResult | null;
 
+  // Costs breakdown
+  lenderCosts: number; // closing costs (lender fees)
+  escrowSetupCosts: number;
+  totalClosingCosts: number; // lenderCosts + escrowSetupCosts
+
   // Additional benefits
   additionalBenefits: {
     skippedPaymentsValue: number;
     skippedMonths: number;
     escrowRefundValue: number;
   };
-
-  // Summary
-  summaryText: string;
 }
 
 export function calculateRefinance(input: RefiInput): RefiResult {
@@ -245,22 +250,10 @@ export function calculateRefinance(input: RefiInput): RefiResult {
   const skippedPaymentsValue = new Decimal(currentPayment).mul(input.skippedMonths ?? 2).toDecimalPlaces(2).toNumber();
   const escrowRefundValue = input.escrowRefundAmount ?? 0;
 
-  // Generate summary
-  const paymentDirection = monthlySavings >= 0 ? "lower" : "raise";
-  const absMonthlySavings = Math.abs(monthlySavings);
-  const absInterestSavings = Math.abs(interestSavings);
-
-  let summaryText: string;
-  if (monthlySavings >= 0) {
-    summaryText =
-      `This refinance will ${paymentDirection} your payment by $${absMonthlySavings.toLocaleString("en-US", { minimumFractionDigits: 2 })} ` +
-      `and you'll pay $${absInterestSavings.toLocaleString("en-US", { minimumFractionDigits: 2 })} ${interestSavings >= 0 ? "less" : "more"} in interest. ` +
-      `It will take ${breakEven} months to recover the refinance costs of $${input.closingCosts.toLocaleString("en-US", { minimumFractionDigits: 2 })}.`;
-  } else {
-    summaryText =
-      `This refinance will ${paymentDirection} your payment by $${absMonthlySavings.toLocaleString("en-US", { minimumFractionDigits: 2 })}, ` +
-      `but you'll pay $${absInterestSavings.toLocaleString("en-US", { minimumFractionDigits: 2 })} ${interestSavings >= 0 ? "less" : "more"} in total interest.`;
-  }
+  // Costs breakdown
+  const lenderCosts = input.closingCosts;
+  const escrowSetupCosts = input.escrowSetupCosts ?? 0;
+  const totalClosingCosts = new Decimal(lenderCosts).plus(escrowSetupCosts).toNumber();
 
   return {
     currentMonthlyPayment: currentPayment,
@@ -275,11 +268,13 @@ export function calculateRefinance(input: RefiInput): RefiResult {
     dailyInterestSaved: dailySaved,
     acceleratedPayoff,
     debtPayoff,
+    lenderCosts,
+    escrowSetupCosts,
+    totalClosingCosts,
     additionalBenefits: {
       skippedPaymentsValue,
       skippedMonths: input.skippedMonths ?? 2,
       escrowRefundValue,
     },
-    summaryText,
   };
 }
