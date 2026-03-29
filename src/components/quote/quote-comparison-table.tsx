@@ -355,7 +355,7 @@ export const QuoteComparisonTable = forwardRef<
               <span className="font-medium">{fmt.format(result.baseLoanAmount)}</span>
             </span>
             <span>
-              <span className="text-gray-500">Closing Costs: Rolled In</span>
+              <span className="text-gray-500">Closing Costs: <span className="font-bold text-gray-700">Rolled In</span></span>
             </span>
           </>
         ) : result.financedFeeAmount > 0 ? (

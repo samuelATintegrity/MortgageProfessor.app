@@ -13,9 +13,10 @@ export function FadeIn({ children }: { children: React.ReactNode }) {
 
   return (
     <div
-      className={`transition-all duration-500 ${
-        visible ? "opacity-100 blur-0" : "opacity-0 blur-sm"
+      className={`transition-all ease-out ${
+        visible ? "opacity-100 blur-0" : "opacity-0 blur-md"
       }`}
+      style={{ transitionDuration: "1400ms" }}
     >
       {children}
     </div>

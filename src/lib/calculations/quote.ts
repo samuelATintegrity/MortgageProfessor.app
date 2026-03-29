@@ -223,7 +223,7 @@ function calculateTier(
     closingCostsRolledIn = closingCostsTotal;
     rolledInLoanAmount = new Decimal(totalLoanAmount).plus(closingCostsRolledIn).toDecimalPlaces(2).toNumber();
     finalPI = monthlyPayment(rolledInLoanAmount, tierConfig.rate, input.loanTermYears);
-    totalCash = new Decimal(totalCashBeforeRollIn).minus(closingCostsRolledIn).toDecimalPlaces(2).toNumber();
+    // Keep totalCash unchanged — closing costs still display even when rolled in
   }
 
   // Total monthly payment
