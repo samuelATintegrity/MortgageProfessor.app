@@ -11,14 +11,6 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
 
 const loginSchema = z.object({
@@ -31,6 +23,7 @@ type LoginValues = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [transitioning, setTransitioning] = useState(false);
 
   const {
     register,
@@ -54,76 +47,81 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/dashboard");
-    router.refresh();
+    // Trigger fade+blur out, then navigate
+    setTransitioning(true);
+    setTimeout(() => {
+      router.push("/dashboard");
+      router.refresh();
+    }, 700);
   }
 
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Welcome back</CardTitle>
-        <CardDescription>Log in to your account</CardDescription>
-      </CardHeader>
+    <div
+      className={`w-full max-w-sm transition-all duration-700 ${
+        transitioning ? "opacity-0 blur-md" : "opacity-100 blur-0"
+      }`}
+    >
+      <div className="text-center mb-6">
+        <h1 className="text-2xl font-semibold text-gray-900">Welcome back</h1>
+        <p className="text-sm text-gray-500 mt-1">Log in to your account</p>
+      </div>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <CardContent className="space-y-4">
-          {error && (
-            <p className="text-sm text-destructive">{error}</p>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {error && (
+          <p className="text-sm text-destructive">{error}</p>
+        )}
+
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="you@example.com"
+            {...register("email")}
+          />
+          {errors.email && (
+            <p className="text-xs text-destructive">
+              {errors.email.message}
+            </p>
           )}
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              {...register("email")}
-            />
-            {errors.email && (
-              <p className="text-xs text-destructive">
-                {errors.email.message}
-              </p>
-            )}
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
+            type="password"
+            placeholder="••••••••"
+            {...register("password")}
+          />
+          {errors.password && (
+            <p className="text-xs text-destructive">
+              {errors.password.message}
+            </p>
+          )}
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              {...register("password")}
-            />
-            {errors.password && (
-              <p className="text-xs text-destructive">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
+        <div className="text-right">
+          <Link
+            href="/forgot-password"
+            className="text-sm text-muted-foreground hover:text-primary"
+          >
+            Forgot your password?
+          </Link>
+        </div>
 
-          <div className="text-right">
-            <Link
-              href="/forgot-password"
-              className="text-sm text-muted-foreground hover:text-primary"
-            >
-              Forgot your password?
-            </Link>
-          </div>
-        </CardContent>
+        <Button type="submit" className="w-full" disabled={isSubmitting || transitioning}>
+          {isSubmitting && <Loader2 className="animate-spin" />}
+          Log In
+        </Button>
 
-        <CardFooter className="flex flex-col gap-4">
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting && <Loader2 className="animate-spin" />}
-            Log In
-          </Button>
-          <p className="text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
-            <Link href="/signup" className="text-primary hover:underline">
-              Sign up
-            </Link>
-          </p>
-        </CardFooter>
+        <p className="text-sm text-center text-muted-foreground">
+          Don&apos;t have an account?{" "}
+          <Link href="/signup" className="text-primary hover:underline">
+            Sign up
+          </Link>
+        </p>
       </form>
-    </Card>
+    </div>
   );
 }

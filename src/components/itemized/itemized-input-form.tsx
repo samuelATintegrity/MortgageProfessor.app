@@ -10,38 +10,7 @@ import { Select, SelectOption } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Plus, X } from "lucide-react";
 import { calculateFinancedFeeAmount } from "@/lib/calculations/fees";
-
-function CurrencyInput({
-  label,
-  value,
-  onChange,
-  id,
-}: {
-  label: string;
-  value: number | undefined;
-  onChange: (val: number) => void;
-  id: string;
-}) {
-  return (
-    <div className="space-y-1">
-      <Label htmlFor={id}>{label}</Label>
-      <div className="relative">
-        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-          $
-        </span>
-        <Input
-          id={id}
-          type="number"
-          step="0.01"
-          min={0}
-          className="pl-7"
-          value={value ?? ""}
-          onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-        />
-      </div>
-    </div>
-  );
-}
+import { CurrencyInput } from "@/components/ui/currency-input";
 
 function NumberInput({
   label,
@@ -382,11 +351,11 @@ export function ItemizedInputForm() {
         </CardContent>
       </Card>
 
-      {/* Section A — Origination Charges */}
+      {/* Section A | Origination Charges */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">
-            Section A — Origination Charges
+            Section A | Origination Charges
           </CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -412,11 +381,11 @@ export function ItemizedInputForm() {
         </CardContent>
       </Card>
 
-      {/* Section B — Third-Party Fees */}
+      {/* Section B | Third-Party Fees */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">
-            Section B — Third-Party Fees
+            Section B | Third-Party Fees
           </CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -457,13 +426,13 @@ export function ItemizedInputForm() {
             onChange={(val) => setInput({ mersFee: val })}
           />
           <CurrencyInput
-            label="Title Insurance — Lender's"
+            label="Title Insurance | Lender's"
             id="titleInsuranceLender"
             value={input.titleInsuranceLender}
             onChange={(val) => setInput({ titleInsuranceLender: val })}
           />
           <CurrencyInput
-            label="Title Insurance — Owner's"
+            label="Title Insurance | Owner's"
             id="titleInsuranceOwner"
             value={input.titleInsuranceOwner}
             onChange={(val) => setInput({ titleInsuranceOwner: val })}
@@ -694,7 +663,7 @@ export function ItemizedInputForm() {
           {isFHA && (
             <div className="sm:col-span-2">
               <div className="rounded-md bg-blue-50 border border-blue-200 p-3 text-sm text-blue-800">
-                <p className="font-medium">UFMIP: 1.75% — auto-calculated</p>
+                <p className="font-medium">UFMIP: 1.75% - auto-calculated</p>
                 {financedFee && (
                   <p className="text-xs mt-1">
                     UFMIP: {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(financedFee.feeAmount)} →
@@ -717,7 +686,7 @@ export function ItemizedInputForm() {
           {isUSDA && (
             <div className="sm:col-span-2">
               <div className="rounded-md bg-green-50 border border-green-200 p-3 text-sm text-green-800">
-                <p className="font-medium">Guarantee Fee: 1.0% — auto-calculated</p>
+                <p className="font-medium">Guarantee Fee: 1.0% - auto-calculated</p>
                 {financedFee && (
                   <p className="text-xs mt-1">
                     Fee: {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(financedFee.feeAmount)} →

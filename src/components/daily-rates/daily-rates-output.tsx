@@ -25,27 +25,12 @@ function formatCurrency(value: number): string {
   });
 }
 
-interface RateEntry {
-  label: string;
-  rate: number;
-  show: boolean;
-  isHomeReady?: boolean;
-}
-
 export const DailyRatesOutput = forwardRef<HTMLDivElement>(
   function DailyRatesOutput(_props, ref) {
     const input = useDailyRatesStore((s) => s.input);
     const { brandingImageUrl, profile, brandingToggles } = useQuoteStore();
 
-    const rates: RateEntry[] = [
-      { label: "Conventional", rate: input.conventional, show: input.showConventional },
-      { label: "FHA", rate: input.fha, show: input.showFha },
-      { label: "VA", rate: input.va, show: input.showVa },
-      { label: "USDA", rate: input.usda, show: input.showUsda },
-      { label: "HomeReady", rate: input.homeReady, show: input.showHomeReady, isHomeReady: true },
-    ];
-
-    const visibleRates = rates.filter((r) => r.show);
+    const visibleRates = input.products.filter((p) => p.show);
 
     // Scale down for shorter/wider aspect ratios (IG Post 1:1, X Post ~16:9)
     const aspectRatio = input.outputHeight / input.outputWidth;
@@ -120,17 +105,9 @@ export const DailyRatesOutput = forwardRef<HTMLDivElement>(
 
         {/* Center: Rates — true centered in the image */}
         <div className={`absolute inset-0 flex flex-col items-center justify-center z-10 ${isVeryCompact ? "p-[3%]" : isCompact ? "p-[4%]" : "p-[5%]"}`}>
-          {/* Date */}
-          <p
-            className={`text-center drop-shadow-lg ${isVeryCompact ? "text-[10px] mb-1" : isCompact ? "text-xs mb-2" : "text-sm mb-4"}`}
-            style={{ color: input.headlineColor, opacity: 0.8 }}
-          >
-            {formatDate(input.date)}
-          </p>
-
           {/* Title */}
           <h2
-            className={`text-center font-bold drop-shadow-lg ${isVeryCompact ? "mb-2" : isCompact ? "mb-3" : "mb-4"}`}
+            className="text-center font-bold drop-shadow-lg"
             style={{
               fontFamily: input.headlineFont !== "Inter" ? input.headlineFont : undefined,
               fontSize: `${isVeryCompact ? Math.round(input.headlineFontSize * 0.6) : isCompact ? Math.round(input.headlineFontSize * 0.75) : input.headlineFontSize}px`,
@@ -140,11 +117,19 @@ export const DailyRatesOutput = forwardRef<HTMLDivElement>(
             Today&apos;s Rates
           </h2>
 
+          {/* Date — centered between title and first rate card */}
+          <p
+            className={`text-center drop-shadow-lg flex-1 flex items-center ${isVeryCompact ? "text-[10px]" : isCompact ? "text-xs" : "text-sm"}`}
+            style={{ color: input.headlineColor, opacity: 0.8 }}
+          >
+            {formatDate(input.date)}
+          </p>
+
           {/* Rate Cards */}
           <div className={`w-full ${isVeryCompact ? "space-y-1" : isCompact ? "space-y-1.5" : "space-y-2"}`}>
             {visibleRates.map((entry) => (
               <div
-                key={entry.label}
+                key={entry.id}
                 className={`${
                   input.rateCardLayout === "center"
                     ? `grid grid-cols-2 ${isVeryCompact ? "px-2 py-1" : isCompact ? "px-3 py-1.5" : "px-4 py-3"}`
@@ -190,14 +175,14 @@ export const DailyRatesOutput = forwardRef<HTMLDivElement>(
             <div className="space-y-0.5 w-full">
               {visibleRates.map((entry) => (
                 <p
-                  key={`scenario-${entry.label}`}
+                  key={`scenario-${entry.id}`}
                   className="text-[7px] leading-tight drop-shadow"
                   style={{ color: input.rateTextColor, opacity: 0.6 }}
                 >
                   {entry.label} rate based on a home value of{" "}
-                  {formatCurrency(input.propertyValue)} and{" "}
-                  {formatCurrency(input.loanAmount)} loan amount,{" "}
-                  {input.creditScore} credit score.
+                  {formatCurrency(entry.propertyValue)} and{" "}
+                  {formatCurrency(entry.loanAmount)} loan amount,{" "}
+                  {entry.creditScore} credit score.
                   {entry.isHomeReady &&
                     " Income must be at or below 80% of the AMI."}
                 </p>

@@ -133,7 +133,7 @@ export const ItemizedClosingCosts = forwardRef<
         className="text-center text-base font-semibold mb-2"
         style={{ fontFamily: headlineFont !== "Inter" ? headlineFont : undefined }}
       >
-        {loanTypeLabel} {transactionLabel} — Itemized Closing Cost Estimate
+        {loanTypeLabel} {transactionLabel} | Itemized Closing Cost Estimate
       </h3>
 
       {/* Loan Summary */}
@@ -194,7 +194,7 @@ export const ItemizedClosingCosts = forwardRef<
       <table className="w-full text-sm border-collapse">
         <tbody>
           {/* Section A */}
-          <SectionHeader color={headerColor}>Section A — Origination Charges</SectionHeader>
+          <SectionHeader color={headerColor}>Section A | Origination Charges</SectionHeader>
           {result.sectionA.map((item, i) => (
             <LineItemRow key={`a-${i}`} item={item} />
           ))}
@@ -211,7 +211,7 @@ export const ItemizedClosingCosts = forwardRef<
           <SubtotalRow label="Section A Subtotal" amount={result.sectionATotal} />
 
           {/* Section B */}
-          <SectionHeader color={headerColor}>Section B — Third-Party Fees</SectionHeader>
+          <SectionHeader color={headerColor}>Section B | Third-Party Fees</SectionHeader>
           {result.sectionB.map((item, i) => (
             <LineItemRow key={`b-${i}`} item={item} />
           ))}
@@ -228,7 +228,7 @@ export const ItemizedClosingCosts = forwardRef<
           <SubtotalRow label="Section B Subtotal" amount={result.sectionBTotal} />
 
           {/* Section C */}
-          <SectionHeader color={headerColor}>Section C — Title Charges</SectionHeader>
+          <SectionHeader color={headerColor}>Section C | Title Charges</SectionHeader>
           {result.sectionC.map((item, i) => (
             <LineItemRow key={`c-title-${i}`} item={item} />
           ))}

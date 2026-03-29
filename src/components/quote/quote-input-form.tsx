@@ -11,38 +11,7 @@ import { ColorPicker } from "@/components/ui/color-picker";
 import { Eye, EyeOff, Info, X } from "lucide-react";
 import type { TierConfig, BuydownType } from "@/lib/calculations/quote";
 import { calculateFinancedFeeAmount } from "@/lib/calculations/fees";
-
-function CurrencyInput({
-  label,
-  value,
-  onChange,
-  id,
-}: {
-  label: string;
-  value: number | undefined;
-  onChange: (val: number) => void;
-  id: string;
-}) {
-  return (
-    <div className="space-y-1">
-      <Label htmlFor={id}>{label}</Label>
-      <div className="relative">
-        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-          $
-        </span>
-        <Input
-          id={id}
-          type="number"
-          step="0.01"
-          min={0}
-          className="pl-7"
-          value={value ?? ""}
-          onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-        />
-      </div>
-    </div>
-  );
-}
+import { CurrencyInput } from "@/components/ui/currency-input";
 
 function NumberInput({
   label,

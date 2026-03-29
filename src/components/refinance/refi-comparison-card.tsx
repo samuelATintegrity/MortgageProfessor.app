@@ -11,10 +11,6 @@ const fmt = new Intl.NumberFormat("en-US", {
   minimumFractionDigits: 2,
 });
 
-function rateDisplay(rate: number): string {
-  return (rate * 100).toFixed(3) + "%";
-}
-
 function SectionHeader({ title }: { title: string }) {
   return (
     <div className="mb-3">
@@ -52,7 +48,6 @@ function Row({ label, value, rowKey, formatting, onRowClick }: {
 export const RefiComparisonCard = forwardRef<HTMLDivElement>(
   function RefiComparisonCard(_props, ref) {
     const result = useRefiStore((s) => s.result);
-    const input = useRefiStore((s) => s.input);
     const sectionVisibility = useRefiStore((s) => s.sectionVisibility);
     const formatting = useRefiStore((s) => s.formatting);
     const setActiveFormatRow = useRefiStore((s) => s.setActiveFormatRow);
@@ -103,12 +98,6 @@ export const RefiComparisonCard = forwardRef<HTMLDivElement>(
         {/* Title */}
         <div className="text-center mb-5">
           <h2 className="text-lg font-bold">Refinance Analysis</h2>
-          <p className="text-sm text-gray-500">
-            {rateDisplay(input.originalRate ?? 0)} {input.originalTermYears ?? 30}yr
-            {" "}
-            &rarr;{" "}
-            {rateDisplay(input.newRate ?? 0)} {input.newTermYears ?? 30}yr
-          </p>
         </div>
 
         {/* Monthly Payment Comparison */}

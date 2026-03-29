@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useCallback } from "react";
 import {
   useDailyRatesStore,
   BUNDLED_BACKGROUNDS,
@@ -8,6 +8,7 @@ import {
   BUNDLED_FONTS,
   DIMENSION_PRESETS,
   getBackgroundsForDimension,
+  type LoanProduct,
 } from "@/stores/daily-rates-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,47 +16,96 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { ColorPicker } from "@/components/ui/color-picker";
-import { Upload, X, AlignHorizontalDistributeCenter, AlignHorizontalSpaceAround } from "lucide-react";
+import { Upload, X, AlignHorizontalDistributeCenter, AlignHorizontalSpaceAround, GripVertical } from "lucide-react";
 
-function RateRow({
-  label,
-  id,
-  rate,
-  show,
-  onRateChange,
-  onToggle,
+function ProductRow({
+  product,
+  index,
+  onUpdate,
+  showScenario,
+  onDragStart,
+  onDragOver,
+  onDrop,
 }: {
-  label: string;
-  id: string;
-  rate: number;
-  show: boolean;
-  onRateChange: (val: number) => void;
-  onToggle: (val: boolean) => void;
+  product: LoanProduct;
+  index: number;
+  onUpdate: (partial: Partial<LoanProduct>) => void;
+  showScenario: boolean;
+  onDragStart: (index: number) => void;
+  onDragOver: (e: React.DragEvent, index: number) => void;
+  onDrop: (index: number) => void;
 }) {
   return (
-    <div className="flex items-center gap-3">
-      <Switch
-        id={`toggle-${id}`}
-        checked={show}
-        onCheckedChange={onToggle}
-      />
-      <Label htmlFor={`toggle-${id}`} className="text-sm w-28 cursor-pointer">
-        {label}
-      </Label>
-      <div className="relative flex-1">
-        <Input
-          id={id}
-          type="number"
-          step="0.001"
-          min={0}
-          max={100}
-          value={rate !== undefined ? parseFloat((rate * 100).toFixed(3)) : ""}
-          onChange={(e) => onRateChange((parseFloat(e.target.value) || 0) / 100)}
+    <div
+      className="border rounded-lg p-3 space-y-2 bg-white"
+      draggable
+      onDragStart={() => onDragStart(index)}
+      onDragOver={(e) => onDragOver(e, index)}
+      onDrop={() => onDrop(index)}
+    >
+      <div className="flex items-center gap-2">
+        <GripVertical className="h-4 w-4 text-gray-400 cursor-grab shrink-0" />
+        <Switch
+          id={`toggle-${product.id}`}
+          checked={product.show}
+          onCheckedChange={(val) => onUpdate({ show: val })}
         />
-        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-          %
-        </span>
+        <Label htmlFor={`toggle-${product.id}`} className="text-sm w-24 cursor-pointer">
+          {product.label}
+        </Label>
+        <div className="relative flex-1">
+          <Input
+            id={`rate-${product.id}`}
+            type="number"
+            step="0.001"
+            min={0}
+            max={100}
+            value={product.rate !== undefined ? parseFloat((product.rate * 100).toFixed(3)) : ""}
+            onChange={(e) => onUpdate({ rate: (parseFloat(e.target.value) || 0) / 100 })}
+          />
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+            %
+          </span>
+        </div>
       </div>
+      {showScenario && product.show && (
+        <div className="grid grid-cols-3 gap-2 pl-6">
+          <div className="space-y-0.5">
+            <Label className="text-[10px] text-muted-foreground">Property Value</Label>
+            <Input
+              type="number"
+              min={0}
+              step={1000}
+              className="h-7 text-xs"
+              value={product.propertyValue || ""}
+              onChange={(e) => onUpdate({ propertyValue: parseFloat(e.target.value) || 0 })}
+            />
+          </div>
+          <div className="space-y-0.5">
+            <Label className="text-[10px] text-muted-foreground">Loan Amount</Label>
+            <Input
+              type="number"
+              min={0}
+              step={1000}
+              className="h-7 text-xs"
+              value={product.loanAmount || ""}
+              onChange={(e) => onUpdate({ loanAmount: parseFloat(e.target.value) || 0 })}
+            />
+          </div>
+          <div className="space-y-0.5">
+            <Label className="text-[10px] text-muted-foreground">Credit Score</Label>
+            <Input
+              type="number"
+              min={300}
+              max={850}
+              step={1}
+              className="h-7 text-xs"
+              value={product.creditScore || ""}
+              onChange={(e) => onUpdate({ creditScore: parseInt(e.target.value) || 740 })}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -89,8 +139,20 @@ function resizeImage(file: File, maxSize: number): Promise<string> {
 }
 
 export function DailyRatesInputForm() {
-  const { input, setInput } = useDailyRatesStore();
+  const { input, setInput, setProduct, reorderProducts } = useDailyRatesStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+
+  const handleDragStart = useCallback((index: number) => setDragIndex(index), []);
+  const handleDragOver = useCallback((e: React.DragEvent, _index: number) => {
+    e.preventDefault();
+  }, []);
+  const handleDrop = useCallback((toIndex: number) => {
+    if (dragIndex !== null && dragIndex !== toIndex) {
+      reorderProducts(dragIndex, toIndex);
+    }
+    setDragIndex(null);
+  }, [dragIndex, reorderProducts]);
 
   const googleFonts = FONT_OPTIONS.filter((f) => !BUNDLED_FONTS.includes(f));
   const customFonts = FONT_OPTIONS.filter((f) => BUNDLED_FONTS.includes(f));
@@ -116,52 +178,25 @@ export function DailyRatesInputForm() {
 
   return (
     <div className="space-y-4">
-      {/* Rates */}
+      {/* Rates — drag to reorder */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Today&apos;s Rates</CardTitle>
+          <p className="text-xs text-muted-foreground">Drag to reorder</p>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <RateRow
-            label="Conventional"
-            id="conventional"
-            rate={input.conventional}
-            show={input.showConventional}
-            onRateChange={(val) => setInput({ conventional: val })}
-            onToggle={(val) => setInput({ showConventional: val })}
-          />
-          <RateRow
-            label="FHA"
-            id="fha"
-            rate={input.fha}
-            show={input.showFha}
-            onRateChange={(val) => setInput({ fha: val })}
-            onToggle={(val) => setInput({ showFha: val })}
-          />
-          <RateRow
-            label="VA"
-            id="va"
-            rate={input.va}
-            show={input.showVa}
-            onRateChange={(val) => setInput({ va: val })}
-            onToggle={(val) => setInput({ showVa: val })}
-          />
-          <RateRow
-            label="USDA"
-            id="usda"
-            rate={input.usda}
-            show={input.showUsda}
-            onRateChange={(val) => setInput({ usda: val })}
-            onToggle={(val) => setInput({ showUsda: val })}
-          />
-          <RateRow
-            label="HomeReady"
-            id="homeReady"
-            rate={input.homeReady}
-            show={input.showHomeReady}
-            onRateChange={(val) => setInput({ homeReady: val })}
-            onToggle={(val) => setInput({ showHomeReady: val })}
-          />
+        <CardContent className="space-y-2">
+          {input.products.map((product, index) => (
+            <ProductRow
+              key={product.id}
+              product={product}
+              index={index}
+              onUpdate={(partial) => setProduct(product.id, partial)}
+              showScenario={input.showScenarioDescriptions}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+            />
+          ))}
         </CardContent>
       </Card>
 
@@ -479,7 +514,7 @@ export function DailyRatesInputForm() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Scenario Details</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent>
           <div className="flex items-center gap-2">
             <Switch
               id="toggle-scenario"
@@ -492,51 +527,10 @@ export function DailyRatesInputForm() {
               Show scenario descriptions on image
             </Label>
           </div>
-
           {input.showScenarioDescriptions && (
-            <div className="space-y-3 pt-2 border-t">
-              <div className="space-y-1">
-                <Label>Property Value</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  step={1000}
-                  value={input.propertyValue || ""}
-                  onChange={(e) =>
-                    setInput({
-                      propertyValue: parseFloat(e.target.value) || 0,
-                    })
-                  }
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Loan Amount</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  step={1000}
-                  value={input.loanAmount || ""}
-                  onChange={(e) =>
-                    setInput({ loanAmount: parseFloat(e.target.value) || 0 })
-                  }
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Credit Score</Label>
-                <Input
-                  type="number"
-                  min={300}
-                  max={850}
-                  step={1}
-                  value={input.creditScore || ""}
-                  onChange={(e) =>
-                    setInput({
-                      creditScore: parseInt(e.target.value) || 740,
-                    })
-                  }
-                />
-              </div>
-            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Edit each product&apos;s scenario in the rates section above.
+            </p>
           )}
         </CardContent>
       </Card>

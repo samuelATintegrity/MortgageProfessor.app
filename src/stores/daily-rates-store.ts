@@ -1,19 +1,21 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+export interface LoanProduct {
+  id: string;
+  label: string;
+  rate: number; // decimal, e.g. 0.065 = 6.5%
+  show: boolean;
+  isHomeReady?: boolean;
+  // Per-product scenario
+  propertyValue: number;
+  loanAmount: number;
+  creditScore: number;
+}
+
 export interface DailyRatesInput {
-  // Rates (as decimals, e.g. 0.065 = 6.5%)
-  conventional: number;
-  fha: number;
-  va: number;
-  usda: number;
-  homeReady: number;
-  // Visibility toggles
-  showConventional: boolean;
-  showFha: boolean;
-  showVa: boolean;
-  showUsda: boolean;
-  showHomeReady: boolean;
+  // Ordered loan products
+  products: LoanProduct[];
   // Background
   backgroundImage: string;
   customBackgroundImage: string | null;
@@ -33,9 +35,6 @@ export interface DailyRatesInput {
   outputHeight: number;
   // Scenario descriptions
   showScenarioDescriptions: boolean;
-  propertyValue: number;
-  loanAmount: number;
-  creditScore: number;
   // Date
   date: string;
 }
@@ -43,6 +42,8 @@ export interface DailyRatesInput {
 interface DailyRatesState {
   input: DailyRatesInput;
   setInput: (partial: Partial<DailyRatesInput>) => void;
+  setProduct: (id: string, partial: Partial<LoanProduct>) => void;
+  reorderProducts: (fromIndex: number, toIndex: number) => void;
   reset: () => void;
 }
 
@@ -101,7 +102,6 @@ export function getBackgroundsForDimension(w: number, h: number): string[] {
 export const DIMENSION_PRESETS = [
   { label: "IG Story", w: 1080, h: 1920 },
   { label: "IG Post", w: 1080, h: 1080 },
-  { label: "X Post", w: 1200, h: 675 },
   { label: "Pinterest", w: 1000, h: 1500 },
 ];
 
@@ -121,17 +121,16 @@ export const BUNDLED_FONTS = ["Priestacy"];
 
 const today = new Date().toISOString().split("T")[0];
 
+const defaultProducts: LoanProduct[] = [
+  { id: "conventional", label: "Conventional", rate: 0.065, show: true, propertyValue: 400000, loanAmount: 380000, creditScore: 740 },
+  { id: "fha", label: "FHA", rate: 0.06, show: true, propertyValue: 400000, loanAmount: 380000, creditScore: 740 },
+  { id: "va", label: "VA", rate: 0.058, show: true, propertyValue: 400000, loanAmount: 380000, creditScore: 740 },
+  { id: "usda", label: "USDA", rate: 0.062, show: true, propertyValue: 400000, loanAmount: 380000, creditScore: 740 },
+  { id: "homeReady", label: "HomeReady", rate: 0.063, show: false, isHomeReady: true, propertyValue: 400000, loanAmount: 380000, creditScore: 740 },
+];
+
 const defaultInput: DailyRatesInput = {
-  conventional: 0.065,
-  fha: 0.06,
-  va: 0.058,
-  usda: 0.062,
-  homeReady: 0.063,
-  showConventional: true,
-  showFha: true,
-  showVa: true,
-  showUsda: true,
-  showHomeReady: false,
+  products: defaultProducts.map((p) => ({ ...p })),
   backgroundImage: BUNDLED_BACKGROUNDS[0],
   customBackgroundImage: null,
   backgroundPosition: 50,
@@ -147,34 +146,58 @@ const defaultInput: DailyRatesInput = {
   outputWidth: 1080,
   outputHeight: 1920,
   showScenarioDescriptions: false,
-  propertyValue: 400000,
-  loanAmount: 380000,
-  creditScore: 740,
   date: today,
 };
 
 export const useDailyRatesStore = create<DailyRatesState>()(
   persist(
     (set) => ({
-      input: { ...defaultInput },
+      input: { ...defaultInput, products: defaultProducts.map((p) => ({ ...p })) },
       setInput: (partial) =>
         set((state) => ({ input: { ...state.input, ...partial } })),
+      setProduct: (id, partial) =>
+        set((state) => ({
+          input: {
+            ...state.input,
+            products: state.input.products.map((p) =>
+              p.id === id ? { ...p, ...partial } : p
+            ),
+          },
+        })),
+      reorderProducts: (fromIndex, toIndex) =>
+        set((state) => {
+          const products = [...state.input.products];
+          const [moved] = products.splice(fromIndex, 1);
+          products.splice(toIndex, 0, moved);
+          return { input: { ...state.input, products } };
+        }),
       reset: () =>
         set({
           input: {
             ...defaultInput,
+            products: defaultProducts.map((p) => ({ ...p })),
             date: new Date().toISOString().split("T")[0],
           },
         }),
     }),
     {
       name: "daily-rates-storage",
-      version: 6,
+      version: 7,
       migrate: (persisted: unknown) => {
-        const old = persisted as { input?: Partial<DailyRatesInput> };
-        return {
-          input: { ...defaultInput, ...(old?.input ?? {}) },
-        };
+        const old = persisted as { input?: Record<string, unknown> };
+        const oldInput = old?.input ?? {};
+        // Migrate from flat fields to products array
+        if (!oldInput.products) {
+          const products: LoanProduct[] = [
+            { id: "conventional", label: "Conventional", rate: (oldInput.conventional as number) ?? 0.065, show: (oldInput.showConventional as boolean) ?? true, propertyValue: (oldInput.propertyValue as number) ?? 400000, loanAmount: (oldInput.loanAmount as number) ?? 380000, creditScore: (oldInput.creditScore as number) ?? 740 },
+            { id: "fha", label: "FHA", rate: (oldInput.fha as number) ?? 0.06, show: (oldInput.showFha as boolean) ?? true, propertyValue: (oldInput.propertyValue as number) ?? 400000, loanAmount: (oldInput.loanAmount as number) ?? 380000, creditScore: (oldInput.creditScore as number) ?? 740 },
+            { id: "va", label: "VA", rate: (oldInput.va as number) ?? 0.058, show: (oldInput.showVa as boolean) ?? true, propertyValue: (oldInput.propertyValue as number) ?? 400000, loanAmount: (oldInput.loanAmount as number) ?? 380000, creditScore: (oldInput.creditScore as number) ?? 740 },
+            { id: "usda", label: "USDA", rate: (oldInput.usda as number) ?? 0.062, show: (oldInput.showUsda as boolean) ?? true, propertyValue: (oldInput.propertyValue as number) ?? 400000, loanAmount: (oldInput.loanAmount as number) ?? 380000, creditScore: (oldInput.creditScore as number) ?? 740 },
+            { id: "homeReady", label: "HomeReady", rate: (oldInput.homeReady as number) ?? 0.063, show: (oldInput.showHomeReady as boolean) ?? false, isHomeReady: true, propertyValue: (oldInput.propertyValue as number) ?? 400000, loanAmount: (oldInput.loanAmount as number) ?? 380000, creditScore: (oldInput.creditScore as number) ?? 740 },
+          ];
+          return { input: { ...defaultInput, ...oldInput, products } };
+        }
+        return { input: { ...defaultInput, ...(oldInput as Partial<DailyRatesInput>) } };
       },
     }
   )
