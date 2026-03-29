@@ -77,7 +77,7 @@ export const BACKGROUNDS_BY_DIMENSION: Record<string, string[]> = {
     "/images/backgrounds/1080x1920 Mountains 1.png",
     "/images/backgrounds/1080x1920 Mountains 2.png",
     "/images/backgrounds/1080x1920 Road.png",
-    "/images/backgrounds/1080x1920 Townohmes.png",
+    "/images/backgrounds/1080x1920 Townhomes.png",
   ],
 };
 
