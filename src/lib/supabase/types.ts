@@ -181,6 +181,27 @@ export type Database = {
           config?: Record<string, unknown>;
         };
       };
+      shared_quotes: {
+        Row: {
+          id: string;
+          user_id: string;
+          token: string;
+          quote_input: Record<string, unknown>;
+          branding: Record<string, unknown>;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          token: string;
+          quote_input: Record<string, unknown>;
+          branding: Record<string, unknown>;
+          is_active?: boolean;
+        };
+        Update: {
+          is_active?: boolean;
+        };
+      };
     };
   };
 };

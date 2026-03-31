@@ -2,7 +2,7 @@
 
 import { useState, type RefObject } from "react";
 import { toPng, toCanvas } from "html-to-image";
-import { Camera, FileDown, Save, Copy, Loader2 } from "lucide-react";
+import { Camera, FileDown, Save, Copy, Loader2, Share2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -14,17 +14,24 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { useQuoteStore } from "@/stores/quote-store";
 import { saveQuote, saveTemplate } from "@/lib/actions/quotes";
+import { createShareLink } from "@/lib/actions/share";
 
 interface QuoteActionBarProps {
   captureRef: RefObject<HTMLDivElement | null>;
+  hideShare?: boolean;
+  hideSave?: boolean;
 }
 
-export function QuoteActionBar({ captureRef }: QuoteActionBarProps) {
-  const { input, result } = useQuoteStore();
+export function QuoteActionBar({ captureRef, hideShare, hideSave }: QuoteActionBarProps) {
+  const { input, result, brandingImageUrl, headlineFont, profile, brandingToggles, sectionHeaderColor } = useQuoteStore();
   const [saving, setSaving] = useState(false);
   const [savingTemplate, setSavingTemplate] = useState(false);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [saveName, setSaveName] = useState("");
+  const [sharing, setSharing] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+  const [copied, setCopied] = useState(false);
 
   async function handleCapture() {
     if (!captureRef.current) return;
@@ -65,7 +72,6 @@ export function QuoteActionBar({ captureRef }: QuoteActionBarProps) {
       const { jsPDF } = await import("jspdf");
 
       // Use the aspect ratio of the captured element to size the PDF
-      // Standard letter width in points = 612, but we'll use mm for jsPDF
       const pdfWidthMm = 210; // A4 width
       const pdfHeightMm = (imgHeight / imgWidth) * pdfWidthMm;
 
@@ -145,6 +151,39 @@ export function QuoteActionBar({ captureRef }: QuoteActionBarProps) {
     }
   }
 
+  async function handleShare() {
+    setSharing(true);
+    try {
+      const res = await createShareLink({
+        quoteInput: input as unknown as Record<string, unknown>,
+        branding: {
+          brandingImageUrl,
+          headlineFont,
+          profile,
+          brandingToggles,
+          sectionHeaderColor,
+        },
+      });
+      if (res.error) {
+        toast({ title: "Error", description: res.error, variant: "destructive" });
+      } else if (res.token) {
+        const url = `${window.location.origin}/share/${res.token}`;
+        setShareUrl(url);
+        setCopied(false);
+        setShareDialogOpen(true);
+      }
+    } finally {
+      setSharing(false);
+    }
+  }
+
+  async function handleCopyLink() {
+    await navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    toast({ title: "Copied", description: "Link copied to clipboard" });
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   return (
     <div className="flex flex-wrap gap-2">
       <Button onClick={handleCapture} variant="default" size="sm">
@@ -155,10 +194,26 @@ export function QuoteActionBar({ captureRef }: QuoteActionBarProps) {
         <FileDown />
         Export PDF
       </Button>
-      <Button variant="outline" size="sm" disabled={!result} onClick={() => setSaveDialogOpen(true)}>
-        <Save />
-        Save Quote
-      </Button>
+      {!hideShare && (
+        <Button onClick={handleShare} variant="outline" size="sm" disabled={sharing}>
+          {sharing ? <Loader2 className="animate-spin" /> : <Share2 />}
+          Share Quote
+        </Button>
+      )}
+      {!hideSave && (
+        <>
+          <Button variant="outline" size="sm" disabled={!result} onClick={() => setSaveDialogOpen(true)}>
+            <Save />
+            Save Quote
+          </Button>
+          <Button onClick={handleSaveTemplate} variant="outline" size="sm" disabled={savingTemplate}>
+            {savingTemplate ? <Loader2 className="animate-spin" /> : <Copy />}
+            Save as Template
+          </Button>
+        </>
+      )}
+
+      {/* Save Dialog */}
       <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
@@ -183,10 +238,32 @@ export function QuoteActionBar({ captureRef }: QuoteActionBarProps) {
           </div>
         </DialogContent>
       </Dialog>
-      <Button onClick={handleSaveTemplate} variant="outline" size="sm" disabled={savingTemplate}>
-        {savingTemplate ? <Loader2 className="animate-spin" /> : <Copy />}
-        Save as Template
-      </Button>
+
+      {/* Share Dialog */}
+      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Share Quick Quote</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Anyone with this link can view and adjust this quote. Changes they make won&apos;t affect your original.
+            </p>
+            <div className="flex gap-2">
+              <Input
+                readOnly
+                value={shareUrl}
+                onClick={(e) => (e.target as HTMLInputElement).select()}
+                className="text-sm"
+              />
+              <Button onClick={handleCopyLink} variant="outline" size="sm" className="shrink-0">
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {copied ? "Copied" : "Copy"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
