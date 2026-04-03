@@ -56,6 +56,7 @@ const defaultInput: Partial<ItemizedInput> = {
   surveyFee: 0,
   transactionType: "purchase",
   sellerCredit: 0,
+  credits: [],
   buydownAmount: 0,
   vaFundingFeePercent: 0,
   fhaUfmipRefund: 0,

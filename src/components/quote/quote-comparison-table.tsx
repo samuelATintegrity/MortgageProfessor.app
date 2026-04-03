@@ -231,12 +231,16 @@ export const QuoteComparisonTable = forwardRef<
     });
   }
 
-  // Seller Credit — hide if refinance or all $0
-  if (!isRefinance && anyNonZero(visibleTiers, (t) => t.sellerCredit)) {
-    closingRows.push({
-      label: "Seller Credit",
-      getValue: (t) =>
-        t.sellerCredit > 0 ? `-${fmt.format(t.sellerCredit)}` : fmt.format(0),
+  // Credits — show each credit line individually
+  if (!isRefinance && visibleTiers.length > 0) {
+    const credits = visibleTiers[0].credits ?? [];
+    credits.forEach((credit) => {
+      if (credit.amount > 0) {
+        closingRows.push({
+          label: credit.label || "Credit",
+          getValue: () => `-${fmt.format(credit.amount)}`,
+        });
+      }
     });
   }
 

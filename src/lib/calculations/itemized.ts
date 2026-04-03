@@ -1,6 +1,7 @@
 import Decimal from "decimal.js";
 import { monthlyPayment } from "./mortgage";
 import { prepaidInterest, calculatePoints, calculateFinancedFeeAmount } from "./fees";
+import type { CreditLine } from "./quote";
 
 export interface CustomFee {
   id: string;
@@ -57,7 +58,8 @@ export interface ItemizedInput {
 
   // Additional
   transactionType: "purchase" | "refinance";
-  sellerCredit: number;
+  sellerCredit: number; // legacy — use credits[] instead
+  credits: CreditLine[];
   buydownAmount: number;
   vaFundingFeePercent: number; // decimal, e.g. 0.0215 for 2.15%
   fhaUfmipRefund: number; // dollar amount refunded on FHA refi
@@ -297,12 +299,20 @@ export function calculateItemized(input: ItemizedInput): ItemizedResult {
   // ---- Credits ----
   const credits: ItemizedLineItem[] = [];
 
-  if (input.sellerCredit > 0) {
-    credits.push({
-      label: "Seller / Realtor Credit",
-      amount: input.sellerCredit,
-      isCredit: true,
-    });
+  // Add all credit lines (falls back to legacy sellerCredit if credits array is empty)
+  const allCredits = input.credits && input.credits.length > 0
+    ? input.credits
+    : input.sellerCredit > 0
+      ? [{ id: "legacy", label: "Seller / Realtor Credit", amount: input.sellerCredit }]
+      : [];
+  for (const credit of allCredits) {
+    if (credit.amount > 0) {
+      credits.push({
+        label: credit.label || "Credit",
+        amount: credit.amount,
+        isCredit: true,
+      });
+    }
   }
 
   // If lender credit (pointsCost is negative), it's already in Section A

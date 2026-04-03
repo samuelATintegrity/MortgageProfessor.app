@@ -16,8 +16,8 @@ function stripCommas(str: string): string {
   return str.replace(/,/g, "");
 }
 
-interface CurrencyInputProps {
-  label: string;
+export interface CurrencyInputProps {
+  label?: string;
   value: number | undefined;
   onChange: (val: number) => void;
   id: string;
@@ -72,7 +72,7 @@ export function CurrencyInput({
 
   return (
     <div className={`space-y-1 ${className ?? ""}`}>
-      <Label htmlFor={id}>{label}</Label>
+      {label && <Label htmlFor={id}>{label}</Label>}
       <div className="relative">
         <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
           $

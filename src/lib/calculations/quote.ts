@@ -5,6 +5,12 @@ import { calculateBuydown, type BuydownType, type BuydownYearResult } from "./bu
 
 export type { BuydownType } from "./buydown";
 
+export interface CreditLine {
+  id: string;
+  label: string;
+  amount: number;
+}
+
 export interface TierConfig {
   id: string;
   name: string;
@@ -35,7 +41,8 @@ export interface QuoteInput {
   prepaidInterestDays: number;
   escrowTaxMonths: number;
   escrowHazardMonths: number;
-  sellerCredit: number;
+  sellerCredit: number; // legacy — use credits[] instead
+  credits: CreditLine[];
   vaFundingFeePercent: number; // decimal, e.g. 0.0215 for 2.15%
   fhaUfmipRefund: number; // dollar amount refunded on FHA refi, reduces UFMIP
 
@@ -76,7 +83,8 @@ export interface TierResult {
   lenderFees: number;
   buydownCost: number;
   downPayment: number;
-  sellerCredit: number;
+  sellerCredit: number; // total of all credits (backward compat)
+  credits: CreditLine[];
   financedFee: number;
   totalCashAtClosing: number;
   monthlyEscrow: number;
@@ -195,7 +203,14 @@ function calculateTier(
 
   // Effective values for refinance
   const effectiveDownPayment = isRefinance ? 0 : downPayment;
-  const effectiveSellerCredit = isRefinance ? 0 : input.sellerCredit;
+  // Sum all credit lines (falls back to legacy sellerCredit if credits array is empty)
+  const allCredits = input.credits && input.credits.length > 0
+    ? input.credits
+    : input.sellerCredit > 0
+      ? [{ id: "legacy", label: "Seller / Realtor Credit", amount: input.sellerCredit }]
+      : [];
+  const totalCredits = allCredits.reduce((sum, c) => new Decimal(sum).plus(c.amount).toNumber(), 0);
+  const effectiveSellerCredit = isRefinance ? 0 : totalCredits;
   const effectivePrepaidCosts = input.piOnlyMode ? 0 : prepaidCosts;
 
   // Total cash at closing (before roll-in)
@@ -250,6 +265,7 @@ function calculateTier(
     buydownCost,
     downPayment: effectiveDownPayment,
     sellerCredit: effectiveSellerCredit,
+    credits: isRefinance ? [] : allCredits,
     financedFee: financedFeeAmount,
     totalCashAtClosing: totalCash,
     monthlyEscrow: effectiveEscrow,

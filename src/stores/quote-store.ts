@@ -54,6 +54,7 @@ const defaultInput: Partial<QuoteInput> = {
   escrowTaxMonths: 5,
   escrowHazardMonths: 15,
   sellerCredit: 0,
+  credits: [],
   vaFundingFeePercent: 0,
   fhaUfmipRefund: 0,
   appraisalFee: 620,
@@ -165,15 +166,25 @@ export const useQuoteStore = create<QuoteState>()(
     }),
     {
       name: "quote-store",
-      version: 1,
+      version: 2,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Record<string, unknown>;
-        if (version === 0) {
+        if (version < 1) {
           // Rename vaFundingFee (dollar) → vaFundingFeePercent (decimal)
           const inp = state.input as Record<string, unknown> | undefined;
           if (inp && "vaFundingFee" in inp) {
             inp.vaFundingFeePercent = 0;
             delete inp.vaFundingFee;
+          }
+        }
+        if (version < 2) {
+          // Migrate sellerCredit → credits array
+          const inp = state.input as Record<string, unknown> | undefined;
+          if (inp && !inp.credits) {
+            const sellerCredit = (inp.sellerCredit as number) || 0;
+            inp.credits = sellerCredit > 0
+              ? [{ id: "credit-1", label: "Seller / Realtor Credit", amount: sellerCredit }]
+              : [];
           }
         }
         return state;

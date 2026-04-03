@@ -8,8 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectOption } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ColorPicker } from "@/components/ui/color-picker";
-import { Eye, EyeOff, Info, X } from "lucide-react";
-import type { TierConfig, BuydownType } from "@/lib/calculations/quote";
+import { Eye, EyeOff, Info, X, Plus, Trash2 } from "lucide-react";
+import type { TierConfig, BuydownType, CreditLine } from "@/lib/calculations/quote";
 import { calculateFinancedFeeAmount } from "@/lib/calculations/fees";
 import { CurrencyInput } from "@/components/ui/currency-input";
 
@@ -541,12 +541,69 @@ export function QuoteInputForm() {
           />
 
           {!isRefinance && (
-            <CurrencyInput
-              label="Seller / Realtor Credit"
-              id="sellerCredit"
-              value={input.sellerCredit}
-              onChange={(val) => setInput({ sellerCredit: val })}
-            />
+            <div className="sm:col-span-2 space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Credits</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs gap-1"
+                  onClick={() => {
+                    const credits: CreditLine[] = [...(input.credits ?? [])];
+                    credits.push({ id: `credit-${Date.now()}`, label: "", amount: 0 });
+                    setInput({ credits });
+                  }}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add Credit
+                </Button>
+              </div>
+              {(input.credits ?? []).map((credit, idx) => (
+                <div key={credit.id} className="flex items-end gap-2">
+                  <div className="flex-1 space-y-1">
+                    {idx === 0 && <Label className="text-xs text-muted-foreground">Label</Label>}
+                    <Input
+                      value={credit.label}
+                      onChange={(e) => {
+                        const credits = [...(input.credits ?? [])];
+                        credits[idx] = { ...credits[idx], label: e.target.value };
+                        setInput({ credits });
+                      }}
+                      placeholder="e.g. Seller Credit"
+                      className="h-9 text-sm"
+                    />
+                  </div>
+                  <div className="w-36 space-y-1">
+                    {idx === 0 && <Label className="text-xs text-muted-foreground">Amount</Label>}
+                    <CurrencyInput
+                      id={`credit-${credit.id}`}
+                      value={credit.amount}
+                      onChange={(val) => {
+                        const credits = [...(input.credits ?? [])];
+                        credits[idx] = { ...credits[idx], amount: val };
+                        setInput({ credits });
+                      }}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-9 w-9 p-0 text-muted-foreground hover:text-destructive shrink-0"
+                    onClick={() => {
+                      const credits = (input.credits ?? []).filter((_, i) => i !== idx);
+                      setInput({ credits });
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ))}
+              {(!input.credits || input.credits.length === 0) && (
+                <p className="text-xs text-muted-foreground">No credits added. Click &quot;Add Credit&quot; to add seller credits, realtor credits, etc.</p>
+              )}
+            </div>
           )}
 
           {/* Financed Fee Section: FHA UFMIP, USDA Guarantee Fee, VA Funding Fee */}
