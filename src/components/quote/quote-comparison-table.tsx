@@ -82,9 +82,11 @@ export const QuoteComparisonTable = forwardRef<
   // Build closing cost rows dynamically
   type RowDef = {
     label: string;
+    getLabel?: (t: TierResult) => string;
     getValue: (t: TierResult) => string;
     bold?: boolean;
     isPoints?: boolean;
+    green?: boolean;
   };
 
   const closingRows: RowDef[] = [];
@@ -238,20 +240,28 @@ export const QuoteComparisonTable = forwardRef<
       if (credit.amount > 0) {
         closingRows.push({
           label: credit.label || "Credit",
-          getValue: () => `-${fmt.format(credit.amount)}`,
+          getValue: () => `(${fmt.format(credit.amount)})`,
+          green: true,
         });
       }
     });
   }
 
-  // Total Cash at Closing / Total Loan Costs
+  // Total Cash at Closing / Total Loan Costs / Left Over Credit
   closingRows.push({
     label: piOnly ? "Total Loan Costs" : isRefinance ? "Total Closing Costs" : "Total Cash at Closing",
+    getLabel: (t) => {
+      const total = piOnly ? t.totalCashAtClosing - (t.downPayment ?? 0) : t.totalCashAtClosing;
+      if (!piOnly && !isRefinance && total < 0) return "Left Over Credit";
+      return piOnly ? "Total Loan Costs" : isRefinance ? "Total Closing Costs" : "Total Cash at Closing";
+    },
     getValue: (t) => {
       const total = piOnly ? t.totalCashAtClosing - (t.downPayment ?? 0) : t.totalCashAtClosing;
+      if (!piOnly && !isRefinance && total < 0) return fmt.format(Math.abs(total));
       return fmt.format(total);
     },
     bold: true,
+    green: undefined, // dynamically set below won't work — handle in render
   });
 
   // Build monthly payment rows
@@ -412,28 +422,33 @@ export const QuoteComparisonTable = forwardRef<
 
             {/* Closing Cost Rows */}
             <div className="flex-1">
-              {closingRows.map((row) => (
-                <div
-                  key={row.label}
-                  className={`flex justify-between items-center px-3 py-1.5 border-b border-gray-200 text-sm ${
-                    row.bold ? "font-semibold" : ""
-                  }`}
-                  style={{
-                    backgroundColor: row.bold
-                      ? hexToRgba(tier.color, 0.15)
-                      : "#ffffff",
-                  }}
-                >
-                  {row.isPoints ? (
-                    <PointsLabel tier={tier} />
-                  ) : (
-                    <span className="text-gray-700 text-xs">{row.label}</span>
-                  )}
-                  <span className="text-right">
-                    {row.isPoints ? <PointsValue tier={tier} /> : row.getValue(tier)}
-                  </span>
-                </div>
-              ))}
+              {closingRows.map((row) => {
+                const label = row.getLabel ? row.getLabel(tier) : row.label;
+                const isLeftOverCredit = label === "Left Over Credit";
+                const isGreen = row.green || isLeftOverCredit;
+                return (
+                  <div
+                    key={row.label}
+                    className={`flex justify-between items-center px-3 py-1.5 border-b border-gray-200 text-sm ${
+                      row.bold ? "font-semibold" : ""
+                    }`}
+                    style={{
+                      backgroundColor: row.bold
+                        ? hexToRgba(tier.color, 0.15)
+                        : "#ffffff",
+                    }}
+                  >
+                    {row.isPoints ? (
+                      <PointsLabel tier={tier} />
+                    ) : (
+                      <span className="text-gray-700 text-xs">{label}</span>
+                    )}
+                    <span className={`text-right ${isGreen ? "text-emerald-600" : ""}`}>
+                      {row.isPoints ? <PointsValue tier={tier} /> : row.getValue(tier)}
+                    </span>
+                  </div>
+                );
+              })}
 
               {/* Separator */}
               <div className="h-2 bg-white" />

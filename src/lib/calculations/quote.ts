@@ -144,24 +144,24 @@ function calculateTier(
 
   // Points: calculated on BASE loan amount (industry standard)
   const pointsCredit = calculatePoints(baseLoanAmount, tierConfig.costCredit);
-  const pointsBuydown = new Decimal(pointsCredit).neg().toNumber();
+  let pointsBuydown = new Decimal(pointsCredit).neg().toNumber();
+
+  // Borrower comp (origination fee) — added to Points/Origination line when borrower-paid
+  const borrowerComp = input.isBorrowerPaid
+    ? new Decimal(baseLoanAmount).mul(input.borrowerPaidCompPercent).toDecimalPlaces(2).toNumber()
+    : 0;
+  if (borrowerComp > 0) {
+    pointsBuydown = new Decimal(pointsBuydown).plus(borrowerComp).toNumber();
+  }
   const isLenderCredit = pointsBuydown < 0;
 
-  // Lender fees — comp on base loan amount + appraisal
-  const baseLenderFees = new Decimal(input.underwritingFee)
+  // Lender fees
+  const lenderFees = new Decimal(input.underwritingFee)
     .plus(input.processingFee)
     .plus(input.voeCreditFee)
     .plus(input.taxFee)
     .plus(input.mersFee)
     .plus(input.appraisalFee);
-
-  let lenderFees: Decimal;
-  if (input.isBorrowerPaid) {
-    const comp = new Decimal(baseLoanAmount).mul(input.borrowerPaidCompPercent);
-    lenderFees = baseLenderFees.plus(comp);
-  } else {
-    lenderFees = baseLenderFees;
-  }
 
   // Title fees (separate line)
   const titleFees = new Decimal(input.titleFee)
