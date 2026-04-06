@@ -11,6 +11,7 @@ import {
   ClipboardList,
   ArrowLeftRight,
   Calendar,
+  TrendingDown,
   User,
   DollarSign,
   Percent,
@@ -43,6 +44,7 @@ const mainNavItems = [
   { label: "Compare Quotes", href: "/comparison/new", icon: ArrowLeftRight },
   { label: "Saved Comparisons", href: "/comparison", icon: FolderOpen },
   { label: "Daily Rates", href: "/daily-rates/new", icon: Calendar },
+  { label: "Amortization", href: "/amortization/new", icon: TrendingDown },
 ];
 
 const settingsNavItems = [
