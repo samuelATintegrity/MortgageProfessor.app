@@ -13,7 +13,7 @@ export default function LandingPage() {
       <h1 className="text-3xl font-bold tracking-tight text-gray-900">
         The Mortgage Professor
       </h1>
-      <p className="mt-2 text-lg text-gray-500">For Lexi to test out</p>
+      <p className="mt-2 text-lg text-gray-500">For testing</p>
       <div className="mt-8">
         <Link href="/signup" className={buttonVariants({ size: "lg" }) + " rounded-full bg-black hover:bg-gray-800 text-white"}>
           Sign Up

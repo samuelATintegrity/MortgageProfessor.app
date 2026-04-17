@@ -15,6 +15,8 @@ import { createClient } from "@/lib/supabase/client";
 const ALLOWED_EMAILS = [
   "lexi@luminarylending.com",
   "samuel@integritylending.com",
+  "josh@integritylending.com",
+  "jcline@integritylending.com",
 ];
 
 const signupSchema = z.object({
